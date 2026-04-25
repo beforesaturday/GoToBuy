@@ -24,13 +24,13 @@ let aciertoTemp = 0;
 // ===================== TITULO ASCII =====================
 function titulo() {
   console.log(`
-██████ ██████ ████████ ██████ ██████ ██ ██ ██
-██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
-██ ██ ██ ███ ██████ ██ ██ ██ ██████ ██ ██ ██
-██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
-██ ██ ██ ██████ ██████ ██████ ████
+██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
+ ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
+ ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
+ ██    ██ ██    ██     ██   ██    ██ ██   ██  ██  ██   ██  ██
+  ██████   ██████      ██    ██████  ██████    ████     ████
 
-GoToBuy
+                 GoToBuy
   `);
 }
 
@@ -93,7 +93,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===================== MOVIMIENTO NORMAL =====================
+  // ===================== CAMINAR =====================
   if (fase === "walk") {
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
@@ -159,7 +159,6 @@ function comprar() {
 
   document.getElementById("shop").classList.add("hidden");
 
-  // 👉 VUELTA MANUAL SIEMPRE
   fase = "return";
   pos = TIENDA;
 }
@@ -172,7 +171,7 @@ function mejorCompra(saldo) {
   let mejorCombo = [];
 
   function buscar(start, combo) {
-    let total = combo.reduce((acc, p) => acc + p[1], 0);
+    let total = combo.reduce((a, p) => a + p[1], 0);
 
     if (total <= saldo) {
       let diff = saldo - total;
