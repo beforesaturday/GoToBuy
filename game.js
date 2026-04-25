@@ -11,7 +11,7 @@ const PRODUCTOS = {
 // ===================== ESTADO =====================
 let modo = "manual";
 
-const CASA = 3;
+const CASA = 5;
 const TIENDA = 50;
 
 let pos = CASA;
