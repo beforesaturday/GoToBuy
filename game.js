@@ -7,29 +7,22 @@ const PRODUCTOS = {
   Papas: 1.40
 };
 
-// ===================== ESTADO =====================
+// ===================== ESTADO GLOBAL =====================
 let modo = "manual";
-let pos = 5; // casa
-let tiendaPos = 50;
+
+let pos = 5;
+let casa = 5;
+let tienda = 50;
+
 let saldo = 0;
 let inicio = 0;
+
 let juegoActivo = false;
 
-let enTienda = false;
+// FSM simple (CLAVE para evitar bugs)
+let estado = "walk"; // walk | shop | return | end
 
-// ===================== TITULO =====================
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("title").innerText =
-`
-██████  ██████  ████████  ██████  ██████  ██    ██ ██    ██
-██       ██   ██    ██    ██    ██ ██   ██ ██    ██ ██    ██
-██   ███ ██████     ██    ██    ██ ██████  ██    ██ ██    ██
-██    ██ ██   ██    ██    ██    ██ ██   ██ ██    ██  ██  ██
- ██████  ██   ██    ██     ██████  ██████   ██████    ████
-
-            GoToBuy
-`;
-});
+let aciertoTemp = 0;
 
 // ===================== INICIO =====================
 function startGame(m) {
@@ -39,10 +32,11 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = 5;
+  pos = casa;
   inicio = Date.now();
+
+  estado = "walk";
   juegoActivo = true;
-  enTienda = false;
 
   draw();
 }
@@ -56,9 +50,9 @@ function generarSaldo() {
 function draw() {
   let line = "";
 
-  for (let i = 0; i <= tiendaPos; i++) {
-    if (i === 5) line += "🏠";
-    else if (i === tiendaPos) line += "🏪";
+  for (let i = 0; i <= tienda; i++) {
+    if (i === casa) line += "🏠";
+    else if (i === tienda) line += "🏪";
     else if (i === pos) line += "😀";
     else line += "·";
   }
@@ -66,39 +60,43 @@ function draw() {
   document.getElementById("screen").innerText = line;
 
   document.getElementById("hud").innerHTML =
-    `💰 Saldo: ${saldo.toFixed(2)}€`;
+    `💰 Saldo: ${saldo.toFixed(2)}€ | Estado: ${estado}`;
 }
 
-// ===================== MOVIMIENTO =====================
+// ===================== TECLADO =====================
 document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
 
-  // ===================== VUELTA A CASA (AMBOS MODOS) =====================
-  if (enTienda) {
-    if (e.key === "ArrowLeft" && pos > 5) pos--;
-    if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
+  // ===================== VUELTA A CASA MANUAL =====================
+  if (estado === "return") {
+    if (e.key === "ArrowLeft" && pos > casa) pos--;
+    if (e.key === "ArrowRight" && pos < tienda) pos++;
 
     draw();
 
-    if (pos === 5) {
+    if (pos === casa) {
       finalizar();
-      enTienda = false;
+      estado = "end";
     }
 
     return;
   }
 
-  // ===================== CAMINO NORMAL =====================
-  if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
-  if (e.key === "ArrowLeft" && pos > 5) pos--;
+  // ===================== CAMINAR =====================
+  if (estado === "walk") {
+    if (e.key === "ArrowRight" && pos < tienda) pos++;
+    if (e.key === "ArrowLeft" && pos > casa) pos--;
 
-  draw();
+    draw();
 
-  if (pos >= tiendaPos) abrirTienda();
+    if (pos === tienda) abrirTienda();
+  }
 });
 
 // ===================== TIENDA =====================
 function abrirTienda() {
+  estado = "shop";
+
   document.getElementById("shop").classList.remove("hidden");
 
   let html = "";
@@ -107,7 +105,7 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
-  // ===================== MODO AUTO =====================
+  // modo auto = SOLO sugerencia
   if (modo === "auto") {
     let [combo] = mejorCompra(saldo);
     let nombres = combo.map(c => c[0]);
@@ -127,12 +125,10 @@ function comprar() {
 
   if (!input) return;
 
-  let indices = input.split(" ");
-
   let seleccion = [];
 
   try {
-    seleccion = indices.map(i => {
+    seleccion = input.split(" ").map(i => {
       let idx = parseInt(i) - 1;
       if (idx < 0 || idx >= keys.length) throw "error";
       return keys[idx];
@@ -149,16 +145,16 @@ function comprar() {
     return;
   }
 
-  let acierto = evaluarCompra(saldo, seleccion);
+  aciertoTemp = evaluarCompra(saldo, seleccion);
 
   document.getElementById("shop").classList.add("hidden");
 
-  // 👉 AHORA VUELTA SIEMPRE MANUAL
-  enTienda = true;
-  window._acierto = acierto;
+  // 👉 VUELTA MANUAL SIEMPRE
+  estado = "return";
+  pos = tienda;
 }
 
-// ===================== MEJOR COMPRA =====================
+// ===================== ALGORITMO =====================
 function mejorCompra(saldo) {
   const productos = Object.entries(PRODUCTOS);
 
@@ -191,12 +187,11 @@ function mejorCompra(saldo) {
 
 // ===================== EVALUAR =====================
 function evaluarCompra(saldo, seleccion) {
-  let total = seleccion.reduce((acc, p) => acc + PRODUCTOS[p], 0);
+  let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
 
   if (total > saldo) return 0;
 
   let [, mejorDiff] = mejorCompra(saldo);
-
   let diffUser = saldo - total;
 
   if (diffUser === 0) return 100;
@@ -213,10 +208,10 @@ function finalizar() {
   document.getElementById("end").classList.remove("hidden");
   document.getElementById("resultado").innerHTML =
     `🏁 FIN<br>
-     Acierto: ${window._acierto}%<br>
+     Acierto: ${aciertoTemp}%<br>
      Tiempo: ${tiempo}s`;
 
-  guardar(window._acierto, tiempo);
+  guardar(aciertoTemp, tiempo);
 }
 
 // ===================== GUARDAR =====================
