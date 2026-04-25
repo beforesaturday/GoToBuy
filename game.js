@@ -9,16 +9,14 @@ const PRODUCTOS = {
 
 // ===================== ESTADO =====================
 let modo = "manual";
-let pos = 5;
-let tiendaPos = 40;
+let pos = 0;
+let tiendaPos = 50;
 let saldo = 0;
 let inicio = 0;
 let juegoActivo = false;
 
-// ===================== CARGA SEGURA =====================
+// ===================== TITULO =====================
 document.addEventListener("DOMContentLoaded", () => {
-
-  // TITULO ASCII
   document.getElementById("title").innerText =
 `
   ██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
@@ -29,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             GoToBuy
 `;
-
 });
 
 // ===================== INICIO =====================
@@ -40,7 +37,7 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = 5;
+  pos = 0; // empieza en casa
   inicio = Date.now();
   juegoActivo = true;
 
@@ -64,7 +61,6 @@ function draw() {
   }
 
   document.getElementById("screen").innerText = line;
-
   document.getElementById("hud").innerHTML =
     `<span class="turquoise">💰 Saldo: ${saldo}€</span>`;
 
@@ -76,7 +72,7 @@ document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
   if (!document.getElementById("shop").classList.contains("hidden")) return;
 
-  if (e.key === "ArrowRight") pos++;
+  if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
   if (e.key === "ArrowLeft" && pos > 0) pos--;
 
   draw();
@@ -96,24 +92,61 @@ function abrirTienda() {
   if (modo === "auto") autoCompra();
 }
 
-// ===================== IA =====================
-function autoCompra() {
-  let keys = Object.keys(PRODUCTOS);
+// ===================== ALGORITMO EXACTO =====================
+function mejorCompra(saldo) {
+  const productos = Object.entries(PRODUCTOS);
 
-  let total = 0;
-  let seleccion = [];
+  let mejorDiff = Infinity;
+  let mejorCombo = [];
 
-  for (let k of keys) {
-    if (total + PRODUCTOS[k] <= saldo) {
-      seleccion.push(k);
-      total += PRODUCTOS[k];
+  function generarCombos(start, comboActual) {
+    let total = comboActual.reduce((acc, p) => acc + p[1], 0);
+
+    if (total <= saldo) {
+      let diff = saldo - total;
+
+      if (diff < mejorDiff) {
+        mejorDiff = diff;
+        mejorCombo = [...comboActual];
+      }
+    } else return;
+
+    if (comboActual.length >= 5) return;
+
+    for (let i = start; i < productos.length; i++) {
+      generarCombos(i, [...comboActual, productos[i]]);
     }
   }
 
-  finalizarCompra(seleccion);
+  generarCombos(0, []);
+
+  return [mejorCombo, mejorDiff];
 }
 
-// ===================== COMPRA =====================
+// ===================== EVALUAR =====================
+function evaluarCompra(saldo, seleccion) {
+  let total = seleccion.reduce((acc, p) => acc + PRODUCTOS[p], 0);
+
+  if (total > saldo) return 0;
+
+  let [, mejorDiff] = mejorCompra(saldo);
+
+  let diffUsuario = saldo - total;
+
+  if (diffUsuario === 0) return 100;
+
+  return Number(((mejorDiff / diffUsuario) * 100).toFixed(2));
+}
+
+// ===================== AUTO =====================
+function autoCompra() {
+  let [combo] = mejorCompra(saldo);
+  let nombres = combo.map(c => c[0]);
+
+  finalizarCompra(nombres);
+}
+
+// ===================== MANUAL =====================
 function comprar() {
   let keys = Object.keys(PRODUCTOS);
   let input = document.getElementById("input").value.split(" ");
@@ -132,24 +165,19 @@ function finalizarCompra(seleccion) {
     return;
   }
 
-  let acierto = evaluar(total);
+  let acierto = evaluarCompra(saldo, seleccion);
 
   document.getElementById("shop").classList.add("hidden");
 
   volverCasa(acierto);
 }
 
-// ===================== EVALUACIÓN =====================
-function evaluar(total) {
-  let diff = saldo - total;
-  if (diff === 0) return 100;
-  return Math.round((1 / (1 + diff)) * 100);
-}
-
 // ===================== VUELTA CASA =====================
 function volverCasa(acierto) {
+  pos = tiendaPos; // empieza en tienda
+
   let interval = setInterval(() => {
-    if (pos > 5) {
+    if (pos > 0) {
       pos--;
       draw();
     } else {
