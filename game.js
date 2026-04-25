@@ -18,10 +18,21 @@ let saldo = 0;
 let inicio = 0;
 let juegoActivo = false;
 
-let fase = "walk"; 
-// walk | shop | return | end
-
+let fase = "walk";
 let aciertoTemp = 0;
+
+// ===================== TITULO ASCII =====================
+function titulo() {
+  console.log(`
+██████ ██████ ████████ ██████ ██████ ██ ██ ██
+██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
+██ ██ ██ ███ ██████ ██ ██ ██ ██████ ██ ██ ██
+██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██
+██ ██ ██ ██████ ██████ ██████ ████
+
+GoToBuy
+  `);
+}
 
 // ===================== INICIO =====================
 function startGame(m) {
@@ -36,6 +47,7 @@ function startGame(m) {
   juegoActivo = true;
   fase = "walk";
 
+  titulo();
   draw();
 }
 
@@ -61,14 +73,12 @@ function draw() {
     `💰 Saldo: ${saldo.toFixed(2)}€ | Fase: ${fase}`;
 }
 
-// ===================== INPUT (ÚNICO) =====================
+// ===================== INPUT =====================
 document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
-
-  // 🚨 BLOQUEAR SI ES INPUT
   if (document.activeElement.tagName === "INPUT") return;
 
-  // ===================== VUELTA A CASA =====================
+  // ===================== VUELTA A CASA MANUAL =====================
   if (fase === "return") {
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
@@ -83,7 +93,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===================== CAMINO NORMAL =====================
+  // ===================== MOVIMIENTO NORMAL =====================
   if (fase === "walk") {
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
@@ -106,7 +116,6 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
-  // modo auto = SOLO sugerencia
   if (modo === "auto") {
     let [combo] = mejorCompra(saldo);
     let nombres = combo.map(c => c[0]);
@@ -150,7 +159,7 @@ function comprar() {
 
   document.getElementById("shop").classList.add("hidden");
 
-  // 👉 SOLO CAMBIO DE FASE (NO MOVIMIENTO)
+  // 👉 VUELTA MANUAL SIEMPRE
   fase = "return";
   pos = TIENDA;
 }
