@@ -1,4 +1,4 @@
-// ===================== CONFIG =====================
+// ===================== PRODUCTOS =====================
 const PRODUCTOS = {
   Vino: 1.90,
   Refresco: 2.20,
@@ -9,7 +9,7 @@ const PRODUCTOS = {
 
 // ===================== ESTADO =====================
 let modo = "manual";
-let pos = 0;
+let pos = 5;
 let tiendaPos = 50;
 let saldo = 0;
 let inicio = 0;
@@ -19,11 +19,11 @@ let juegoActivo = false;
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("title").innerText =
 `
- ██████   ██████   ██████   ██████  ██████
-██       ██    ██ ██    ██ ██       ██
-██   ███ ██    ██ ██    ██ ██   ███ ██████
-██    ██ ██    ██ ██    ██ ██    ██ ██
- ██████   ██████   ██████   ██████  ██████
+██████  ██████  ████████  ██████  ██████  ██    ██ ██    ██
+██       ██   ██    ██    ██    ██ ██   ██ ██    ██ ██    ██
+██   ███ ██████     ██    ██    ██ ██████  ██    ██ ██    ██
+██    ██ ██   ██    ██    ██    ██ ██   ██ ██    ██  ██  ██
+ ██████  ██   ██    ██     ██████  ██████   ██████    ████
 
             GoToBuy
 `;
@@ -37,7 +37,7 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = 0;
+  pos = 5; // empieza en casa (como Python)
   inicio = Date.now();
   juegoActivo = true;
 
@@ -54,15 +54,16 @@ function draw() {
   let line = "";
 
   for (let i = 0; i <= tiendaPos; i++) {
-    if (i === 0) line += "🏠";
+    if (i === 5) line += "🏠";
     else if (i === tiendaPos) line += "🏪";
     else if (i === pos) line += "😀";
     else line += "·";
   }
 
   document.getElementById("screen").innerText = line;
+
   document.getElementById("hud").innerHTML =
-    `<span class="turquoise">💰 Saldo: ${saldo}€</span>`;
+    `💰 Saldo: ${saldo.toFixed(2)}€`;
 
   if (pos >= tiendaPos) abrirTienda();
 }
@@ -72,8 +73,8 @@ document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
   if (!document.getElementById("shop").classList.contains("hidden")) return;
 
-  if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
-  if (e.key === "ArrowLeft" && pos > 0) pos--;
+  if (e.key === "ArrowRight") pos++;
+  if (e.key === "ArrowLeft" && pos > 5) pos--;
 
   draw();
 });
@@ -83,52 +84,56 @@ function abrirTienda() {
   document.getElementById("shop").classList.remove("hidden");
 
   let html = "";
-  Object.keys(PRODUCTOS).forEach((k, i) => {
-    html += `${i + 1}. ${k} - ${PRODUCTOS[k]}€<br>`;
+
+  Object.entries(PRODUCTOS).forEach(([k, v], i) => {
+    html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
-  // 👉 SUGERENCIA MODO AUTO (como Python)
+  // ===================== MODO AUTO (IGUAL PYTHON) =====================
   if (modo === "auto") {
     let [combo] = mejorCompra(saldo);
     let nombres = combo.map(c => c[0]);
-    html += `<br><span class="emerald">💡 Mejor: ${nombres.join(", ")}</span>`;
+
+    html += `<br><span style="color:#2bff6a">
+    💡 Mejor opción: ${nombres.join(", ")}
+    </span>`;
   }
 
   document.getElementById("productos").innerHTML = html;
 }
 
-// ===================== ALGORITMO =====================
+// ===================== MEJOR COMPRA (PYTHON PORT) =====================
 function mejorCompra(saldo) {
   const productos = Object.entries(PRODUCTOS);
 
   let mejorDiff = Infinity;
   let mejorCombo = [];
 
-  function generarCombos(start, comboActual) {
-    let total = comboActual.reduce((acc, p) => acc + p[1], 0);
+  function buscar(start, combo) {
+    let total = combo.reduce((acc, p) => acc + p[1], 0);
 
     if (total <= saldo) {
       let diff = saldo - total;
 
       if (diff < mejorDiff) {
         mejorDiff = diff;
-        mejorCombo = [...comboActual];
+        mejorCombo = [...combo];
       }
     } else return;
 
-    if (comboActual.length >= 5) return;
+    if (combo.length >= 5) return;
 
     for (let i = start; i < productos.length; i++) {
-      generarCombos(i, [...comboActual, productos[i]]);
+      buscar(i, [...combo, productos[i]]);
     }
   }
 
-  generarCombos(0, []);
+  buscar(0, []);
 
   return [mejorCombo, mejorDiff];
 }
 
-// ===================== EVALUAR =====================
+// ===================== EVALUAR COMPRA =====================
 function evaluarCompra(saldo, seleccion) {
   let total = seleccion.reduce((acc, p) => acc + PRODUCTOS[p], 0);
 
@@ -136,24 +141,40 @@ function evaluarCompra(saldo, seleccion) {
 
   let [, mejorDiff] = mejorCompra(saldo);
 
-  let diffUsuario = saldo - total;
+  let diffUser = saldo - total;
 
-  if (diffUsuario === 0) return 100;
+  if (diffUser === 0) return 100;
 
-  return Number(((mejorDiff / diffUsuario) * 100).toFixed(2));
+  return Math.round((mejorDiff / diffUser) * 10000) / 100;
 }
 
-// ===================== COMPRA =====================
+// ===================== COMPRA (IGUAL PYTHON WHILE TRUE) =====================
 function comprar() {
   let keys = Object.keys(PRODUCTOS);
-  let input = document.getElementById("input").value.split(" ");
+  let input = document.getElementById("input").value.trim();
 
-  let seleccion = input.map(i => keys[+i - 1]).filter(Boolean);
+  if (!input) return;
+
+  let indices = input.split(" ");
+
+  let seleccion = [];
+
+  try {
+    seleccion = indices.map(i => {
+      let idx = parseInt(i) - 1;
+      if (idx < 0 || idx >= keys.length) throw "error";
+      return keys[idx];
+    });
+  } catch {
+    return;
+  }
 
   let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
 
+  // ❌ igual que Python: si te pasas, NO sales
   if (total > saldo) {
-    alert("❌ Excede saldo");
+    document.getElementById("hud").innerHTML =
+      `<span style="color:#ff4fd8">❌ Excede saldo</span>`;
     return;
   }
 
@@ -166,10 +187,10 @@ function comprar() {
 
 // ===================== VUELTA CASA =====================
 function volverCasa(acierto) {
-  pos = tiendaPos;
+  pos = tiendaPos; // empiezas en tienda
 
   let interval = setInterval(() => {
-    if (pos > 0) {
+    if (pos > 5) {
       pos--;
       draw();
     } else {
@@ -187,8 +208,9 @@ function fin(acierto) {
 
   document.getElementById("end").classList.remove("hidden");
   document.getElementById("resultado").innerHTML =
-    `<span class="emerald">Acierto: ${acierto}%</span><br>
-     <span class="sky">Tiempo: ${tiempo}s</span>`;
+    `🏁 FIN<br>
+     Acierto: ${acierto}%<br>
+     Tiempo: ${tiempo}s`;
 
   guardar(acierto, tiempo);
 }
@@ -211,7 +233,7 @@ function guardar(acierto, tiempo) {
 function showPartidas() {
   let data = JSON.parse(localStorage.getItem("partidas") || "[]");
 
-  let html = "<h3>Partidas</h3>";
+  let html = "<h3>Partidas anteriores</h3>";
 
   data.forEach(p => {
     html += `<p>${p.fecha} | ${p.modo} | ${p.acierto}% | ${p.tiempo}s</p>`;
