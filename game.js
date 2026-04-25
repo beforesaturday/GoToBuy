@@ -9,24 +9,22 @@ const PRODUCTOS = {
 
 // ===================== ESTADO =====================
 let modo = "manual";
-let pos = 5;
+let pos = 5; // casa
 let tiendaPos = 50;
 let saldo = 0;
 let inicio = 0;
 let juegoActivo = false;
-
-// guarda si hay que finalizar tras volver a casa
 let finPendiente = null;
 
 // ===================== TITULO =====================
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("title").innerText =
 `
-██████  ██████  ████████  ██████  ██████  ██    ██ ██    ██
-██       ██   ██    ██    ██    ██ ██   ██ ██    ██ ██    ██
-██   ███ ██████     ██    ██    ██ ██████  ██    ██ ██    ██
-██    ██ ██   ██    ██    ██    ██ ██   ██ ██    ██  ██  ██
- ██████  ██   ██    ██     ██████  ██████   ██████    ████
+  ██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
+ ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
+ ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
+ ██    ██ ██    ██     ██   ██    ██ ██   ██  ██  ██   ██  ██
+  ██████   ██████      ██    ██████  ██████    ████     ████
 
             GoToBuy
 `;
@@ -40,7 +38,7 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = 5; // casa
+  pos = 5;
   inicio = Date.now();
   juegoActivo = true;
   finPendiente = null;
@@ -68,10 +66,6 @@ function draw() {
 
   document.getElementById("hud").innerHTML =
     `💰 Saldo: ${saldo.toFixed(2)}€`;
-
-  if (pos >= tiendaPos && !document.getElementById("shop").classList.contains("show")) {
-    abrirTienda();
-  }
 }
 
 // ===================== MOVIMIENTO =====================
@@ -80,13 +74,14 @@ document.addEventListener("keydown", (e) => {
 
   // ===================== VUELTA A CASA MANUAL =====================
   if (finPendiente !== null) {
+
     if (e.key === "ArrowLeft" && pos > 5) pos--;
     if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
 
     draw();
 
-    // cuando llega a casa → fin
-    if (pos <= 5) {
+    // SOLO termina si estás en casa
+    if (pos === 5) {
       finalizar(finPendiente);
       finPendiente = null;
     }
@@ -101,6 +96,8 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft" && pos > 5) pos--;
 
   draw();
+
+  if (pos >= tiendaPos) abrirTienda();
 });
 
 // ===================== TIENDA =====================
@@ -113,7 +110,7 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
-  // ===================== MODO AUTO (SOLO SUGIERE) =====================
+  // ===================== MODO AUTO (SOLO SUGERENCIA) =====================
   if (modo === "auto") {
     let [combo] = mejorCompra(saldo);
     let nombres = combo.map(c => c[0]);
@@ -126,7 +123,7 @@ function abrirTienda() {
   document.getElementById("productos").innerHTML = html;
 }
 
-// ===================== ALGORITMO =====================
+// ===================== MEJOR COMPRA =====================
 function mejorCompra(saldo) {
   const productos = Object.entries(PRODUCTOS);
 
@@ -205,7 +202,7 @@ function comprar() {
 
   document.getElementById("shop").classList.add("hidden");
 
-  // 👉 ACTIVA VUELTA MANUAL
+  // 👉 activa vuelta manual
   finPendiente = acierto;
 }
 
