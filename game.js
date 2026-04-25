@@ -1,4 +1,4 @@
-// ===================== PRODUCTOS =====================
+// ===================== CONFIG =====================
 const PRODUCTOS = {
   Vino: 1.90,
   Refresco: 2.20,
@@ -6,10 +6,6 @@ const PRODUCTOS = {
   Energetica: 1.80,
   Papas: 1.40
 };
-
-// ===================== ASCII =====================
-const CASA = ["██████", "██  ██", "██████"];
-const TIENDA = ["██████", "TIENDA", "██████"];
 
 // ===================== ESTADO =====================
 let modo = "manual";
@@ -19,17 +15,22 @@ let saldo = 0;
 let inicio = 0;
 let juegoActivo = false;
 
-// ===================== TITULO (GoToBuy como pyfiglet) =====================
-document.getElementById("title").innerText =
+// ===================== CARGA SEGURA =====================
+document.addEventListener("DOMContentLoaded", () => {
+
+  // TITULO ASCII
+  document.getElementById("title").innerText =
 `
- ██████   ██████   ██████   ██████  ██████
-██       ██    ██ ██    ██ ██       ██
-██   ███ ██    ██ ██    ██ ██   ███ ██████
-██    ██ ██    ██ ██    ██ ██    ██ ██
- ██████   ██████   ██████   ██████  ██████
+  ██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
+ ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
+ ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
+ ██    ██ ██    ██     ██   ██    ██ ██   ██  ██  ██   ██  ██
+  ██████   ██████      ██    ██████  ██████    ████     ████
 
             GoToBuy
 `;
+
+});
 
 // ===================== INICIO =====================
 function startGame(m) {
@@ -95,7 +96,7 @@ function abrirTienda() {
   if (modo === "auto") autoCompra();
 }
 
-// ===================== IA (igual idea Python) =====================
+// ===================== IA =====================
 function autoCompra() {
   let keys = Object.keys(PRODUCTOS);
 
@@ -112,7 +113,7 @@ function autoCompra() {
   finalizarCompra(seleccion);
 }
 
-// ===================== COMPRA MANUAL =====================
+// ===================== COMPRA =====================
 function comprar() {
   let keys = Object.keys(PRODUCTOS);
   let input = document.getElementById("input").value.split(" ");
@@ -138,7 +139,7 @@ function finalizarCompra(seleccion) {
   volverCasa(acierto);
 }
 
-// ===================== EVALUACIÓN (igual Python) =====================
+// ===================== EVALUACIÓN =====================
 function evaluar(total) {
   let diff = saldo - total;
   if (diff === 0) return 100;
@@ -186,7 +187,7 @@ function guardar(acierto, tiempo) {
   localStorage.setItem("partidas", JSON.stringify(data));
 }
 
-// ===================== PARTIDAS =====================
+// ===================== HISTORIAL =====================
 function showPartidas() {
   let data = JSON.parse(localStorage.getItem("partidas") || "[]");
 
