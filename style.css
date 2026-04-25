@@ -5,13 +5,11 @@ body {
   text-align: center;
 }
 
-/* colores similares a ANSI del Python */
 .emerald { color: #2bff6a; }
 .turquoise { color: #3ff6ff; }
 .fuchsia { color: #ff4fd8; }
 .purple { color: #b56bff; }
 .sky { color: #6bb6ff; }
-.white { color: white; }
 
 button {
   display: block;
