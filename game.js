@@ -19,11 +19,11 @@ let juegoActivo = false;
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("title").innerText =
 `
-  ██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
- ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
- ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
- ██    ██ ██    ██     ██   ██    ██ ██   ██  ██  ██   ██  ██
-  ██████   ██████      ██    ██████  ██████    ████     ████
+ ██████   ██████   ██████   ██████  ██████
+██       ██    ██ ██    ██ ██       ██
+██   ███ ██    ██ ██    ██ ██   ███ ██████
+██    ██ ██    ██ ██    ██ ██    ██ ██
+ ██████   ██████   ██████   ██████  ██████
 
             GoToBuy
 `;
@@ -37,7 +37,7 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = 0; // empieza en casa
+  pos = 0;
   inicio = Date.now();
   juegoActivo = true;
 
@@ -87,12 +87,17 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${PRODUCTOS[k]}€<br>`;
   });
 
-  document.getElementById("productos").innerHTML = html;
+  // 👉 SUGERENCIA MODO AUTO (como Python)
+  if (modo === "auto") {
+    let [combo] = mejorCompra(saldo);
+    let nombres = combo.map(c => c[0]);
+    html += `<br><span class="emerald">💡 Mejor: ${nombres.join(", ")}</span>`;
+  }
 
-  if (modo === "auto") autoCompra();
+  document.getElementById("productos").innerHTML = html;
 }
 
-// ===================== ALGORITMO EXACTO =====================
+// ===================== ALGORITMO =====================
 function mejorCompra(saldo) {
   const productos = Object.entries(PRODUCTOS);
 
@@ -138,26 +143,13 @@ function evaluarCompra(saldo, seleccion) {
   return Number(((mejorDiff / diffUsuario) * 100).toFixed(2));
 }
 
-// ===================== AUTO =====================
-function autoCompra() {
-  let [combo] = mejorCompra(saldo);
-  let nombres = combo.map(c => c[0]);
-
-  finalizarCompra(nombres);
-}
-
-// ===================== MANUAL =====================
+// ===================== COMPRA =====================
 function comprar() {
   let keys = Object.keys(PRODUCTOS);
   let input = document.getElementById("input").value.split(" ");
 
   let seleccion = input.map(i => keys[+i - 1]).filter(Boolean);
 
-  finalizarCompra(seleccion);
-}
-
-// ===================== FINAL COMPRA =====================
-function finalizarCompra(seleccion) {
   let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
 
   if (total > saldo) {
@@ -174,7 +166,7 @@ function finalizarCompra(seleccion) {
 
 // ===================== VUELTA CASA =====================
 function volverCasa(acierto) {
-  pos = tiendaPos; // empieza en tienda
+  pos = tiendaPos;
 
   let interval = setInterval(() => {
     if (pos > 0) {
