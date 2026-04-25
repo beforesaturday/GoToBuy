@@ -7,41 +7,22 @@ const PRODUCTOS = {
   Papas: 1.40
 };
 
-// ===================== ESTADO =====================
+// ===================== ESTADO GLOBAL =====================
 let modo = "manual";
 
-const CASA = 5;
-const TIENDA = 50;
+let pos = 5;
+let casa = 5;
+let tienda = 50;
 
-let pos = CASA;
 let saldo = 0;
 let inicio = 0;
+
 let juegoActivo = false;
 
-let fase = "walk";
+// FSM simple (CLAVE para evitar bugs)
+let estado = "walk"; // walk | shop | return | end
+
 let aciertoTemp = 0;
-
-// ===================== TITULO ASCII (VISIBLE EN DOM) =====================
-function titulo() {
-  const el = document.getElementById("titulo");
-
-  el.innerHTML = `
-<pre style="
-color:#ff4fd8;
-font-size:14px;
-line-height:1.1;
-margin:0;
-">
-██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
- ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
- ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
- ██    ██ ██    ██     ██   ██    ██ ██   ██  ██  ██   ██  ██
-  ██████   ██████      ██    ██████  ██████    ████     ████
-
-                 GoToBuy
-</pre>
-  `;
-}
 
 // ===================== INICIO =====================
 function startGame(m) {
@@ -51,12 +32,12 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = CASA;
+  pos = casa;
   inicio = Date.now();
-  juegoActivo = true;
-  fase = "walk";
 
-  titulo();
+  estado = "walk";
+  juegoActivo = true;
+
   draw();
 }
 
@@ -69,9 +50,9 @@ function generarSaldo() {
 function draw() {
   let line = "";
 
-  for (let i = 0; i <= TIENDA; i++) {
-    if (i === CASA) line += "🏠";
-    else if (i === TIENDA) line += "🏪";
+  for (let i = 0; i <= tienda; i++) {
+    if (i === casa) line += "🏠";
+    else if (i === tienda) line += "🏪";
     else if (i === pos) line += "😀";
     else line += "·";
   }
@@ -79,43 +60,42 @@ function draw() {
   document.getElementById("screen").innerText = line;
 
   document.getElementById("hud").innerHTML =
-    `💰 Saldo: ${saldo.toFixed(2)}€ | Fase: ${fase}`;
+    `💰 Saldo: ${saldo.toFixed(2)}€ | Estado: ${estado}`;
 }
 
-// ===================== INPUT =====================
+// ===================== TECLADO =====================
 document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
-  if (document.activeElement.tagName === "INPUT") return;
 
-  // ===================== VUELTA A CASA =====================
-  if (fase === "return") {
-    if (e.key === "ArrowLeft" && pos > CASA) pos--;
-    if (e.key === "ArrowRight" && pos < TIENDA) pos++;
+  // ===================== VUELTA A CASA MANUAL =====================
+  if (estado === "return") {
+    if (e.key === "ArrowLeft" && pos > casa) pos--;
+    if (e.key === "ArrowRight" && pos < tienda) pos++;
 
     draw();
 
-    if (pos === CASA) {
+    if (pos === casa) {
       finalizar();
-      fase = "end";
+      estado = "end";
     }
 
     return;
   }
 
-  // ===================== CAMINO =====================
-  if (fase === "walk") {
-    if (e.key === "ArrowRight" && pos < TIENDA) pos++;
-    if (e.key === "ArrowLeft" && pos > CASA) pos--;
+  // ===================== CAMINAR =====================
+  if (estado === "walk") {
+    if (e.key === "ArrowRight" && pos < tienda) pos++;
+    if (e.key === "ArrowLeft" && pos > casa) pos--;
 
     draw();
 
-    if (pos === TIENDA) abrirTienda();
+    if (pos === tienda) abrirTienda();
   }
 });
 
 // ===================== TIENDA =====================
 function abrirTienda() {
-  fase = "shop";
+  estado = "shop";
 
   document.getElementById("shop").classList.remove("hidden");
 
@@ -125,6 +105,7 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
+  // modo auto = SOLO sugerencia
   if (modo === "auto") {
     let [combo] = mejorCompra(saldo);
     let nombres = combo.map(c => c[0]);
@@ -168,8 +149,9 @@ function comprar() {
 
   document.getElementById("shop").classList.add("hidden");
 
-  fase = "return";
-  pos = TIENDA;
+  // 👉 VUELTA MANUAL SIEMPRE
+  estado = "return";
+  pos = tienda;
 }
 
 // ===================== ALGORITMO =====================
@@ -180,7 +162,7 @@ function mejorCompra(saldo) {
   let mejorCombo = [];
 
   function buscar(start, combo) {
-    let total = combo.reduce((a, p) => a + p[1], 0);
+    let total = combo.reduce((acc, p) => acc + p[1], 0);
 
     if (total <= saldo) {
       let diff = saldo - total;
@@ -244,4 +226,18 @@ function guardar(acierto, tiempo) {
   });
 
   localStorage.setItem("partidas", JSON.stringify(data));
+}
+
+// ===================== HISTORIAL =====================
+function showPartidas() {
+  let data = JSON.parse(localStorage.getItem("partidas") || "[]");
+
+  let html = "<h3>Partidas anteriores</h3>";
+
+  data.forEach(p => {
+    html += `<p>${p.fecha} | ${p.modo} | ${p.acierto}% | ${p.tiempo}s</p>`;
+  });
+
+  document.getElementById("historial").innerHTML = html;
+  document.getElementById("historial").classList.remove("hidden");
 }
