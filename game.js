@@ -22,13 +22,13 @@ let juegoActivo = false;
 let fase = "walk";
 let aciertoTemp = 0;
 
-// ===================== ASCII TITLE (FIX REAL) =====================
+// ===================== TITULO (FORZADO + SEGURO) =====================
 function titulo() {
-  const el = document.getElementById("titulo");
+  let el = document.getElementById("titulo");
 
   if (!el) {
-    console.warn("⚠️ Falta <div id='titulo'> en el HTML");
-    return;
+    // fallback si no existe el div
+    el = document.body;
   }
 
   el.innerHTML = `
@@ -39,19 +39,16 @@ line-height:1.1;
 white-space:pre;
 margin:0;
 ">
-// ===================== TITULO =====================
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("title").innerText =
-`
-██████  ██████  ████████  ██████  ██████  ██    ██ ██    ██
-██       ██   ██    ██    ██    ██ ██   ██ ██    ██ ██    ██
-██   ███ ██████     ██    ██    ██ ██████  ██    ██ ██    ██
-██    ██ ██   ██    ██    ██    ██ ██   ██ ██    ██  ██  ██
- ██████  ██   ██    ██     ██████  ██████   ██████    ████
+██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
+ ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
+ ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
+ ██    ██ ██    ██     ██   ██    ██ ██   ██  ██  ██   ██  ██
+  ██████   ██████      ██    ██████  ██████    ████     ████
 
-            GoToBuy
-`;
-});
+                 GoToBuy
+</pre>
+  `;
+}
 
 // ===================== INICIO =====================
 function startGame(m) {
@@ -66,9 +63,7 @@ function startGame(m) {
   juegoActivo = true;
   fase = "walk";
 
-  // 🔥 FIX: espera DOM seguro
-  setTimeout(titulo, 0);
-
+  titulo(); // 🔥 se ejecuta seguro
   draw();
 }
 
@@ -77,11 +72,11 @@ function generarSaldo() {
   return +(Math.random() * (8 - 1.5) + 1.5).toFixed(2);
 }
 
-// ===================== DIBUJO =====================
+// ===================== DIBUJO (CASA SIN PUNTOS ANTES) =====================
 function draw() {
   let line = "";
 
-  for (let i = 0; i <= TIENDA; i++) {
+  for (let i = CASA; i <= TIENDA; i++) {   // 🔥 FIX: empieza en CASA (sin puntos antes)
     if (i === CASA) line += "🏠";
     else if (i === TIENDA) line += "🏪";
     else if (i === pos) line += "😀";
@@ -99,7 +94,7 @@ document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
   if (document.activeElement.tagName === "INPUT") return;
 
-  // ===================== VUELTA A CASA =====================
+  // ===================== VUELTA CASA =====================
   if (fase === "return") {
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
@@ -114,7 +109,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===================== CAMINAR =====================
+  // ===================== CAMINO =====================
   if (fase === "walk") {
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
@@ -184,51 +179,6 @@ function comprar() {
   pos = TIENDA;
 }
 
-// ===================== ALGORITMO =====================
-function mejorCompra(saldo) {
-  const productos = Object.entries(PRODUCTOS);
-
-  let mejorDiff = Infinity;
-  let mejorCombo = [];
-
-  function buscar(start, combo) {
-    let total = combo.reduce((a, p) => a + p[1], 0);
-
-    if (total <= saldo) {
-      let diff = saldo - total;
-
-      if (diff < mejorDiff) {
-        mejorDiff = diff;
-        mejorCombo = [...combo];
-      }
-    } else return;
-
-    if (combo.length >= 5) return;
-
-    for (let i = start; i < productos.length; i++) {
-      buscar(i, [...combo, productos[i]]);
-    }
-  }
-
-  buscar(0, []);
-
-  return [mejorCombo, mejorDiff];
-}
-
-// ===================== EVALUAR =====================
-function evaluarCompra(saldo, seleccion) {
-  let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
-
-  if (total > saldo) return 0;
-
-  let [, mejorDiff] = mejorCompra(saldo);
-  let diffUser = saldo - total;
-
-  if (diffUser === 0) return 100;
-
-  return Math.round((mejorDiff / diffUser) * 10000) / 100;
-}
-
 // ===================== FINAL =====================
 function finalizar() {
   juegoActivo = false;
@@ -257,8 +207,3 @@ function guardar(acierto, tiempo) {
 
   localStorage.setItem("partidas", JSON.stringify(data));
 }
-
-// ===================== SEGURIDAD EXTRA =====================
-window.addEventListener("DOMContentLoaded", () => {
-  console.log("Juego cargado correctamente");
-});
