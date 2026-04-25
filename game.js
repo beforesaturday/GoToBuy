@@ -15,6 +15,9 @@ let saldo = 0;
 let inicio = 0;
 let juegoActivo = false;
 
+// guarda si hay que finalizar tras volver a casa
+let finPendiente = null;
+
 // ===================== TITULO =====================
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("title").innerText =
@@ -37,9 +40,10 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = 5; // empieza en casa (como Python)
+  pos = 5; // casa
   inicio = Date.now();
   juegoActivo = true;
+  finPendiente = null;
 
   draw();
 }
@@ -65,15 +69,35 @@ function draw() {
   document.getElementById("hud").innerHTML =
     `💰 Saldo: ${saldo.toFixed(2)}€`;
 
-  if (pos >= tiendaPos) abrirTienda();
+  if (pos >= tiendaPos && !document.getElementById("shop").classList.contains("show")) {
+    abrirTienda();
+  }
 }
 
 // ===================== MOVIMIENTO =====================
 document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
+
+  // ===================== VUELTA A CASA MANUAL =====================
+  if (finPendiente !== null) {
+    if (e.key === "ArrowLeft" && pos > 5) pos--;
+    if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
+
+    draw();
+
+    // cuando llega a casa → fin
+    if (pos <= 5) {
+      finalizar(finPendiente);
+      finPendiente = null;
+    }
+
+    return;
+  }
+
+  // ===================== MOVIMIENTO NORMAL =====================
   if (!document.getElementById("shop").classList.contains("hidden")) return;
 
-  if (e.key === "ArrowRight") pos++;
+  if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
   if (e.key === "ArrowLeft" && pos > 5) pos--;
 
   draw();
@@ -89,20 +113,20 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
-  // ===================== MODO AUTO (IGUAL PYTHON) =====================
+  // ===================== MODO AUTO (SOLO SUGIERE) =====================
   if (modo === "auto") {
     let [combo] = mejorCompra(saldo);
     let nombres = combo.map(c => c[0]);
 
     html += `<br><span style="color:#2bff6a">
-    💡 Mejor opción: ${nombres.join(", ")}
+      💡 Mejor opción: ${nombres.join(", ")}
     </span>`;
   }
 
   document.getElementById("productos").innerHTML = html;
 }
 
-// ===================== MEJOR COMPRA (PYTHON PORT) =====================
+// ===================== ALGORITMO =====================
 function mejorCompra(saldo) {
   const productos = Object.entries(PRODUCTOS);
 
@@ -133,7 +157,7 @@ function mejorCompra(saldo) {
   return [mejorCombo, mejorDiff];
 }
 
-// ===================== EVALUAR COMPRA =====================
+// ===================== EVALUAR =====================
 function evaluarCompra(saldo, seleccion) {
   let total = seleccion.reduce((acc, p) => acc + PRODUCTOS[p], 0);
 
@@ -148,7 +172,7 @@ function evaluarCompra(saldo, seleccion) {
   return Math.round((mejorDiff / diffUser) * 10000) / 100;
 }
 
-// ===================== COMPRA (IGUAL PYTHON WHILE TRUE) =====================
+// ===================== COMPRA =====================
 function comprar() {
   let keys = Object.keys(PRODUCTOS);
   let input = document.getElementById("input").value.trim();
@@ -171,7 +195,6 @@ function comprar() {
 
   let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
 
-  // ❌ igual que Python: si te pasas, NO sales
   if (total > saldo) {
     document.getElementById("hud").innerHTML =
       `<span style="color:#ff4fd8">❌ Excede saldo</span>`;
@@ -182,26 +205,12 @@ function comprar() {
 
   document.getElementById("shop").classList.add("hidden");
 
-  volverCasa(acierto);
-}
-
-// ===================== VUELTA CASA =====================
-function volverCasa(acierto) {
-  pos = tiendaPos; // empiezas en tienda
-
-  let interval = setInterval(() => {
-    if (pos > 5) {
-      pos--;
-      draw();
-    } else {
-      clearInterval(interval);
-      fin(acierto);
-    }
-  }, 40);
+  // 👉 ACTIVA VUELTA MANUAL
+  finPendiente = acierto;
 }
 
 // ===================== FINAL =====================
-function fin(acierto) {
+function finalizar(acierto) {
   juegoActivo = false;
 
   let tiempo = ((Date.now() - inicio) / 1000).toFixed(2);
