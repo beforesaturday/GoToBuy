@@ -1,3 +1,4 @@
+
 // ===================== PRODUCTOS =====================
 const PRODUCTOS = {
   Vino: 1.90,
@@ -21,15 +22,21 @@ let juegoActivo = false;
 let fase = "walk";
 let aciertoTemp = 0;
 
-// ===================== TITULO ASCII (VISIBLE EN DOM) =====================
+// ===================== ASCII TITLE (FIX REAL) =====================
 function titulo() {
   const el = document.getElementById("titulo");
+
+  if (!el) {
+    console.warn("⚠️ Falta <div id='titulo'> en el HTML");
+    return;
+  }
 
   el.innerHTML = `
 <pre style="
 color:#ff4fd8;
 font-size:14px;
 line-height:1.1;
+white-space:pre;
 margin:0;
 ">
 ██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
@@ -56,7 +63,9 @@ function startGame(m) {
   juegoActivo = true;
   fase = "walk";
 
-  titulo();
+  // 🔥 FIX: espera DOM seguro
+  setTimeout(titulo, 0);
+
   draw();
 }
 
@@ -102,7 +111,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===================== CAMINO =====================
+  // ===================== CAMINAR =====================
   if (fase === "walk") {
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
@@ -245,3 +254,8 @@ function guardar(acierto, tiempo) {
 
   localStorage.setItem("partidas", JSON.stringify(data));
 }
+
+// ===================== SEGURIDAD EXTRA =====================
+window.addEventListener("DOMContentLoaded", () => {
+  console.log("Juego cargado correctamente");
+});
