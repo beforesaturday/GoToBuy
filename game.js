@@ -7,20 +7,19 @@ const PRODUCTOS = {
   Papas: 1.40
 };
 
-// ===================== ESTADO GLOBAL =====================
+// ===================== ESTADO =====================
 let modo = "manual";
 
-let pos = 5;
-let casa = 5;
-let tienda = 50;
+const CASA = 5;
+const TIENDA = 50;
 
+let pos = CASA;
 let saldo = 0;
 let inicio = 0;
-
 let juegoActivo = false;
 
-// FSM simple (CLAVE para evitar bugs)
-let estado = "walk"; // walk | shop | return | end
+let fase = "walk"; 
+// walk | shop | return | end
 
 let aciertoTemp = 0;
 
@@ -32,11 +31,10 @@ function startGame(m) {
   document.getElementById("game").classList.remove("hidden");
 
   saldo = generarSaldo();
-  pos = casa;
+  pos = CASA;
   inicio = Date.now();
-
-  estado = "walk";
   juegoActivo = true;
+  fase = "walk";
 
   draw();
 }
@@ -50,9 +48,9 @@ function generarSaldo() {
 function draw() {
   let line = "";
 
-  for (let i = 0; i <= tienda; i++) {
-    if (i === casa) line += "🏠";
-    else if (i === tienda) line += "🏪";
+  for (let i = 0; i <= TIENDA; i++) {
+    if (i === CASA) line += "🏠";
+    else if (i === TIENDA) line += "🏪";
     else if (i === pos) line += "😀";
     else line += "·";
   }
@@ -60,42 +58,45 @@ function draw() {
   document.getElementById("screen").innerText = line;
 
   document.getElementById("hud").innerHTML =
-    `💰 Saldo: ${saldo.toFixed(2)}€ | Estado: ${estado}`;
+    `💰 Saldo: ${saldo.toFixed(2)}€ | Fase: ${fase}`;
 }
 
-// ===================== TECLADO =====================
+// ===================== INPUT (ÚNICO) =====================
 document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
 
-  // ===================== VUELTA A CASA MANUAL =====================
-  if (estado === "return") {
-    if (e.key === "ArrowLeft" && pos > casa) pos--;
-    if (e.key === "ArrowRight" && pos < tienda) pos++;
+  // 🚨 BLOQUEAR SI ES INPUT
+  if (document.activeElement.tagName === "INPUT") return;
+
+  // ===================== VUELTA A CASA =====================
+  if (fase === "return") {
+    if (e.key === "ArrowLeft" && pos > CASA) pos--;
+    if (e.key === "ArrowRight" && pos < TIENDA) pos++;
 
     draw();
 
-    if (pos === casa) {
+    if (pos === CASA) {
       finalizar();
-      estado = "end";
+      fase = "end";
     }
 
     return;
   }
 
-  // ===================== CAMINAR =====================
-  if (estado === "walk") {
-    if (e.key === "ArrowRight" && pos < tienda) pos++;
-    if (e.key === "ArrowLeft" && pos > casa) pos--;
+  // ===================== CAMINO NORMAL =====================
+  if (fase === "walk") {
+    if (e.key === "ArrowRight" && pos < TIENDA) pos++;
+    if (e.key === "ArrowLeft" && pos > CASA) pos--;
 
     draw();
 
-    if (pos === tienda) abrirTienda();
+    if (pos === TIENDA) abrirTienda();
   }
 });
 
 // ===================== TIENDA =====================
 function abrirTienda() {
-  estado = "shop";
+  fase = "shop";
 
   document.getElementById("shop").classList.remove("hidden");
 
@@ -149,9 +150,9 @@ function comprar() {
 
   document.getElementById("shop").classList.add("hidden");
 
-  // 👉 VUELTA MANUAL SIEMPRE
-  estado = "return";
-  pos = tienda;
+  // 👉 SOLO CAMBIO DE FASE (NO MOVIMIENTO)
+  fase = "return";
+  pos = TIENDA;
 }
 
 // ===================== ALGORITMO =====================
@@ -226,18 +227,4 @@ function guardar(acierto, tiempo) {
   });
 
   localStorage.setItem("partidas", JSON.stringify(data));
-}
-
-// ===================== HISTORIAL =====================
-function showPartidas() {
-  let data = JSON.parse(localStorage.getItem("partidas") || "[]");
-
-  let html = "<h3>Partidas anteriores</h3>";
-
-  data.forEach(p => {
-    html += `<p>${p.fecha} | ${p.modo} | ${p.acierto}% | ${p.tiempo}s</p>`;
-  });
-
-  document.getElementById("historial").innerHTML = html;
-  document.getElementById("historial").classList.remove("hidden");
 }
