@@ -21,9 +21,17 @@ let juegoActivo = false;
 let fase = "walk";
 let aciertoTemp = 0;
 
-// ===================== TITULO ASCII =====================
+// ===================== TITULO ASCII (VISIBLE EN DOM) =====================
 function titulo() {
-  console.log(`
+  const el = document.getElementById("titulo");
+
+  el.innerHTML = `
+<pre style="
+color:#ff4fd8;
+font-size:14px;
+line-height:1.1;
+margin:0;
+">
 ██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
  ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
  ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
@@ -31,7 +39,8 @@ function titulo() {
   ██████   ██████      ██    ██████  ██████    ████     ████
 
                  GoToBuy
-  `);
+</pre>
+  `;
 }
 
 // ===================== INICIO =====================
@@ -78,7 +87,7 @@ document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
   if (document.activeElement.tagName === "INPUT") return;
 
-  // ===================== VUELTA A CASA MANUAL =====================
+  // ===================== VUELTA A CASA =====================
   if (fase === "return") {
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
@@ -93,7 +102,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===================== CAMINAR =====================
+  // ===================== CAMINO =====================
   if (fase === "walk") {
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
