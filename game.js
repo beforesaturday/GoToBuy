@@ -14,17 +14,18 @@ let tiendaPos = 50;
 let saldo = 0;
 let inicio = 0;
 let juegoActivo = false;
-let finPendiente = null;
+
+let enTienda = false;
 
 // ===================== TITULO =====================
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("title").innerText =
 `
-  ██████   ██████   ██████   ██████  ██████  ██    ██ ██    ██
- ██       ██    ██     ██   ██    ██ ██   ██ ██    ██ ██    ██
- ██   ███ ██    ██     ██   ██    ██ ██████  ██    ██ ██    ██
- ██    ██ ██    ██     ██   ██    ██ ██   ██  ██  ██   ██  ██
-  ██████   ██████      ██    ██████  ██████    ████     ████
+██████  ██████  ████████  ██████  ██████  ██    ██ ██    ██
+██       ██   ██    ██    ██    ██ ██   ██ ██    ██ ██    ██
+██   ███ ██████     ██    ██    ██ ██████  ██    ██ ██    ██
+██    ██ ██   ██    ██    ██    ██ ██   ██ ██    ██  ██  ██
+ ██████  ██   ██    ██     ██████  ██████   ██████    ████
 
             GoToBuy
 `;
@@ -41,7 +42,7 @@ function startGame(m) {
   pos = 5;
   inicio = Date.now();
   juegoActivo = true;
-  finPendiente = null;
+  enTienda = false;
 
   draw();
 }
@@ -72,26 +73,22 @@ function draw() {
 document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
 
-  // ===================== VUELTA A CASA MANUAL =====================
-  if (finPendiente !== null) {
-
+  // ===================== VUELTA A CASA (AMBOS MODOS) =====================
+  if (enTienda) {
     if (e.key === "ArrowLeft" && pos > 5) pos--;
     if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
 
     draw();
 
-    // SOLO termina si estás en casa
     if (pos === 5) {
-      finalizar(finPendiente);
-      finPendiente = null;
+      finalizar();
+      enTienda = false;
     }
 
     return;
   }
 
-  // ===================== MOVIMIENTO NORMAL =====================
-  if (!document.getElementById("shop").classList.contains("hidden")) return;
-
+  // ===================== CAMINO NORMAL =====================
   if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
   if (e.key === "ArrowLeft" && pos > 5) pos--;
 
@@ -110,7 +107,7 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
-  // ===================== MODO AUTO (SOLO SUGERENCIA) =====================
+  // ===================== MODO AUTO =====================
   if (modo === "auto") {
     let [combo] = mejorCompra(saldo);
     let nombres = combo.map(c => c[0]);
@@ -121,6 +118,44 @@ function abrirTienda() {
   }
 
   document.getElementById("productos").innerHTML = html;
+}
+
+// ===================== COMPRA =====================
+function comprar() {
+  let keys = Object.keys(PRODUCTOS);
+  let input = document.getElementById("input").value.trim();
+
+  if (!input) return;
+
+  let indices = input.split(" ");
+
+  let seleccion = [];
+
+  try {
+    seleccion = indices.map(i => {
+      let idx = parseInt(i) - 1;
+      if (idx < 0 || idx >= keys.length) throw "error";
+      return keys[idx];
+    });
+  } catch {
+    return;
+  }
+
+  let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
+
+  if (total > saldo) {
+    document.getElementById("hud").innerHTML =
+      `<span style="color:#ff4fd8">❌ Excede saldo</span>`;
+    return;
+  }
+
+  let acierto = evaluarCompra(saldo, seleccion);
+
+  document.getElementById("shop").classList.add("hidden");
+
+  // 👉 AHORA VUELTA SIEMPRE MANUAL
+  enTienda = true;
+  window._acierto = acierto;
 }
 
 // ===================== MEJOR COMPRA =====================
@@ -169,45 +204,8 @@ function evaluarCompra(saldo, seleccion) {
   return Math.round((mejorDiff / diffUser) * 10000) / 100;
 }
 
-// ===================== COMPRA =====================
-function comprar() {
-  let keys = Object.keys(PRODUCTOS);
-  let input = document.getElementById("input").value.trim();
-
-  if (!input) return;
-
-  let indices = input.split(" ");
-
-  let seleccion = [];
-
-  try {
-    seleccion = indices.map(i => {
-      let idx = parseInt(i) - 1;
-      if (idx < 0 || idx >= keys.length) throw "error";
-      return keys[idx];
-    });
-  } catch {
-    return;
-  }
-
-  let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
-
-  if (total > saldo) {
-    document.getElementById("hud").innerHTML =
-      `<span style="color:#ff4fd8">❌ Excede saldo</span>`;
-    return;
-  }
-
-  let acierto = evaluarCompra(saldo, seleccion);
-
-  document.getElementById("shop").classList.add("hidden");
-
-  // 👉 activa vuelta manual
-  finPendiente = acierto;
-}
-
 // ===================== FINAL =====================
-function finalizar(acierto) {
+function finalizar() {
   juegoActivo = false;
 
   let tiempo = ((Date.now() - inicio) / 1000).toFixed(2);
@@ -215,10 +213,10 @@ function finalizar(acierto) {
   document.getElementById("end").classList.remove("hidden");
   document.getElementById("resultado").innerHTML =
     `🏁 FIN<br>
-     Acierto: ${acierto}%<br>
+     Acierto: ${window._acierto}%<br>
      Tiempo: ${tiempo}s`;
 
-  guardar(acierto, tiempo);
+  guardar(window._acierto, tiempo);
 }
 
 // ===================== GUARDAR =====================
