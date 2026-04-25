@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Juego Tienda</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>🏪 Juego de la Tienda</h1>
+
+  <div id="game">
+    <pre id="mapa"></pre>
+  </div>
+
+  <div id="info">
+    <p id="saldo"></p>
+    <p id="mensaje"></p>
+  </div>
+
+  <div id="tienda" class="hidden">
+    <h2>🏪 TIENDA</h2>
+    <div id="productos"></div>
+
+    <button onclick="comprar()">Comprar</button>
+  </div>
+
+  <div id="final" class="hidden">
+    <h2>🏁 Resultado</h2>
+    <p id="resultado"></p>
+    <button onclick="reiniciar()">Jugar otra vez</button>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
