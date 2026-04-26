@@ -1,14 +1,3 @@
-body {
-  background: #0f0f0f;
-  color: white;
-  font-family: monospace;
-  text-align: center;
-}
-
-.hidden {
-  display: none;
-}
-
 button {
   padding: 10px;
   margin: 5px;
@@ -19,18 +8,13 @@ button {
   border-radius: 6px;
 }
 
-#screen {
-  margin-top: 20px;
-  font-size: 20px;
+.hidden {
+  display: none;
 }
 
-#hud {
-  margin-top: 10px;
-  color: #2bff6a;
-}
-
-#titulo pre {
-  color: #ff4fd8;
-  font-size: 14px;
-  line-height: 1.1;
+body {
+  background: #0f0f0f;
+  color: white;
+  font-family: monospace;
+  text-align: center;
 }
