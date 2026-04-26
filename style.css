@@ -5,15 +5,23 @@ body {
   text-align: center;
 }
 
-pre {
-  font-size: 14px;
-  line-height: 14px;
+h1 {
+  color: #00ff99;
+  margin-top: 20px;
 }
 
 button {
-  margin: 5px;
-  padding: 10px;
+  margin: 6px;
+  padding: 10px 15px;
   cursor: pointer;
+  border: none;
+  background: #222;
+  color: white;
+}
+
+button:hover {
+  background: #00ff99;
+  color: black;
 }
 
 .hidden {
@@ -25,6 +33,6 @@ button {
 }
 
 input {
-  padding: 5px;
+  padding: 8px;
   width: 200px;
 }
