@@ -1,30 +1,36 @@
 body {
-  background: black;
+  background: #0f0f0f;
   color: white;
   font-family: monospace;
   text-align: center;
-}
-
-.emerald { color: #2bff6a; }
-.turquoise { color: #3ff6ff; }
-.fuchsia { color: #ff4fd8; }
-.purple { color: #b56bff; }
-.sky { color: #6bb6ff; }
-
-button {
-  display: block;
-  margin: 6px auto;
-  padding: 10px;
-  cursor: pointer;
-  background: #111;
-  color: white;
-  border: 1px solid #444;
 }
 
 .hidden {
   display: none;
 }
 
-pre {
-  font-size: 16px;
+button {
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  border: none;
+  background: #ff4fd8;
+  color: white;
+  border-radius: 6px;
+}
+
+#screen {
+  margin-top: 20px;
+  font-size: 20px;
+}
+
+#hud {
+  margin-top: 10px;
+  color: #2bff6a;
+}
+
+#titulo pre {
+  color: #ff4fd8;
+  font-size: 14px;
+  line-height: 1.1;
 }
