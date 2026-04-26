@@ -19,13 +19,25 @@ function generarSaldo() {
   }
 }
 
-// combinations with replacement
-function combos(arr, r) {
-  let result = [];
+function existeCombinacion(saldo) {
+  let precios = Object.values(PRODUCTOS);
+
+  for (let r = 1; r <= 5; r++) {
+    let combos = getCombos(precios, r);
+    for (let c of combos) {
+      let sum = c.reduce((a, b) => a + b, 0);
+      if (sum <= saldo) return true;
+    }
+  }
+  return false;
+}
+
+function getCombos(arr, r) {
+  let res = [];
 
   function backtrack(start, path) {
     if (path.length === r) {
-      result.push([...path]);
+      res.push([...path]);
       return;
     }
     for (let i = start; i < arr.length; i++) {
@@ -36,56 +48,10 @@ function combos(arr, r) {
   }
 
   backtrack(0, []);
-  return result;
+  return res;
 }
 
-function existeCombinacion(saldo) {
-  let precios = Object.values(PRODUCTOS);
-
-  for (let r = 1; r <= 5; r++) {
-    for (let c of combos(precios, r)) {
-      let sum = c.reduce((a, b) => a + b, 0);
-      if (sum <= saldo) return true;
-    }
-  }
-  return false;
-}
-
-// ===================== MEJOR COMPRA =====================
-function mejorCompra(saldo) {
-  let entries = Object.entries(PRODUCTOS);
-  let mejor = [];
-  let mejorDiff = Infinity;
-
-  for (let r = 1; r <= 5; r++) {
-    for (let c of combos(entries, r)) {
-      let total = c.reduce((a, b) => a + b[1], 0);
-      if (total <= saldo) {
-        let diff = saldo - total;
-        if (diff < mejorDiff) {
-          mejorDiff = diff;
-          mejor = c;
-        }
-      }
-    }
-  }
-  return { mejor, mejorDiff };
-}
-
-// ===================== EVALUAR =====================
-function evaluar(saldo, seleccion) {
-  let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
-  if (total > saldo) return 0;
-
-  let { mejorDiff } = mejorCompra(saldo);
-  let diffUser = saldo - total;
-
-  if (diffUser === 0) return 100;
-
-  return +(mejorDiff / diffUser * 100).toFixed(2);
-}
-
-// ===================== UI =====================
+// ===================== INICIO =====================
 function startGame(m) {
   modo = m;
   saldo = generarSaldo();
@@ -106,12 +72,21 @@ function startGame(m) {
 
 // ===================== COMPRA =====================
 function buy() {
-  let input = document.getElementById("input").value.split(" ");
+  let input = document.getElementById("input").value.trim().split(" ");
   let keys = Object.keys(PRODUCTOS);
 
-  let seleccion = input.map(i => keys[parseInt(i) - 1]).filter(Boolean);
+  let seleccion = input
+    .map(i => keys[parseInt(i) - 1])
+    .filter(Boolean);
 
-  let acierto = evaluar(saldo, seleccion);
+  let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
+
+  if (total > saldo) {
+    alert("❌ Excede saldo");
+    return;
+  }
+
+  let acierto = evaluar(saldo, total);
   let tiempo = ((Date.now() - startTime) / 1000).toFixed(2);
 
   history.push({
@@ -123,8 +98,15 @@ function buy() {
 
   localStorage.setItem("partidas", JSON.stringify(history));
 
-  alert(`🏁 Fin\nAcierto: ${acierto}%\nTiempo: ${tiempo}s`);
+  alert(`🏁 FIN\nAcierto: ${acierto}%\nTiempo: ${tiempo}s`);
   location.reload();
+}
+
+// ===================== EVALUACIÓN =====================
+function evaluar(saldo, total) {
+  let diff = saldo - total;
+  if (diff === 0) return 100;
+  return Math.max(0, 100 - diff * 20).toFixed(2);
 }
 
 // ===================== HISTORIAL =====================
@@ -132,7 +114,7 @@ function showHistory() {
   alert(JSON.stringify(history, null, 2));
 }
 
-// ===================== CLEAR =====================
-function clearScreen() {
-  document.body.innerHTML = "<h1>Juego cerrado</h1>";
+// ===================== RESET =====================
+function resetGame() {
+  location.reload();
 }
