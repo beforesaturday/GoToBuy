@@ -3,19 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>GoToBuy</title>
-  <style>
-    .hidden { display: none; }
-    body { background:#111; color:white; font-family: monospace; }
-    button { margin:5px; padding:10px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- 🔥 TITULO ASCII -->
+<!-- ================= TITULO ================= -->
 <div id="titulo"></div>
 
-<!-- 🔥 MENU -->
+<!-- ================= MENU ================= -->
 <div id="menu">
   <h2>GoToBuy</h2>
 
@@ -23,7 +19,7 @@
   <button onclick="startGame('auto')">Modo Automático</button>
 </div>
 
-<!-- 🔥 JUEGO -->
+<!-- ================= JUEGO ================= -->
 <div id="game" class="hidden">
 
   <div id="hud"></div>
@@ -39,13 +35,12 @@
 
 </div>
 
-<!-- 🔥 FINAL -->
+<!-- ================= FINAL ================= -->
 <div id="end" class="hidden">
-  <h2>Resultado</h2>
+  <h2>Fin de partida</h2>
   <div id="resultado"></div>
 </div>
 
-<!-- 🔥 TU JS -->
 <script src="game.js"></script>
 
 </body>
