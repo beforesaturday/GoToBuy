@@ -1,3 +1,4 @@
+
 // ===================== PRODUCTOS =====================
 const PRODUCTOS = {
   Vino: 1.90,
@@ -8,20 +9,30 @@ const PRODUCTOS = {
 };
 
 // ===================== ESTADO =====================
-let modo = "manual";
-
 const CASA = 5;
 const TIENDA = 50;
 
 let pos = CASA;
 let saldo = 0;
+let modo = "manual";
+let fase = "walk";
 let inicio = 0;
+let aciertoTemp = 0;
 let juegoActivo = false;
 
-let fase = "walk"; 
-// walk | shop | return | end
+// ===================== TITULO =====================
+function titulo() {
+  document.getElementById("titulo").innerHTML = `
+<pre>
+██████  ██████  ████████  ██████  ██████
+██       ██   ██    ██    ██    ██ ██   ██
+██   ███ ██████     ██    ██    ██ ██████
+██    ██ ██   ██    ██    ██    ██ ██   ██
+ ██████  ██   ██    ██     ██████  ██████
 
-let aciertoTemp = 0;
+            GoToBuy
+</pre>`;
+}
 
 // ===================== INICIO =====================
 function startGame(m) {
@@ -36,6 +47,7 @@ function startGame(m) {
   juegoActivo = true;
   fase = "walk";
 
+  titulo();
   draw();
 }
 
@@ -48,7 +60,7 @@ function generarSaldo() {
 function draw() {
   let line = "";
 
-  for (let i = 0; i <= TIENDA; i++) {
+  for (let i = CASA; i <= TIENDA; i++) {
     if (i === CASA) line += "🏠";
     else if (i === TIENDA) line += "🏪";
     else if (i === pos) line += "😀";
@@ -57,33 +69,14 @@ function draw() {
 
   document.getElementById("screen").innerText = line;
 
-  document.getElementById("hud").innerHTML =
-    `💰 Saldo: ${saldo.toFixed(2)}€ | Fase: ${fase}`;
+  document.getElementById("hud").innerText =
+    `💰 ${saldo.toFixed(2)}€ | Fase: ${fase}`;
 }
 
-// ===================== INPUT (ÚNICO) =====================
+// ===================== MOVIMIENTO =====================
 document.addEventListener("keydown", (e) => {
   if (!juegoActivo) return;
 
-  // 🚨 BLOQUEAR SI ES INPUT
-  if (document.activeElement.tagName === "INPUT") return;
-
-  // ===================== VUELTA A CASA =====================
-  if (fase === "return") {
-    if (e.key === "ArrowLeft" && pos > CASA) pos--;
-    if (e.key === "ArrowRight" && pos < TIENDA) pos++;
-
-    draw();
-
-    if (pos === CASA) {
-      finalizar();
-      fase = "end";
-    }
-
-    return;
-  }
-
-  // ===================== CAMINO NORMAL =====================
   if (fase === "walk") {
     if (e.key === "ArrowRight" && pos < TIENDA) pos++;
     if (e.key === "ArrowLeft" && pos > CASA) pos--;
@@ -91,6 +84,15 @@ document.addEventListener("keydown", (e) => {
     draw();
 
     if (pos === TIENDA) abrirTienda();
+  }
+
+  if (fase === "return") {
+    if (e.key === "ArrowLeft" && pos > CASA) pos--;
+    if (e.key === "ArrowRight" && pos < TIENDA) pos++;
+
+    draw();
+
+    if (pos === CASA) finalizar();
   }
 });
 
@@ -106,14 +108,9 @@ function abrirTienda() {
     html += `${i + 1}. ${k} - ${v.toFixed(2)}€<br>`;
   });
 
-  // modo auto = SOLO sugerencia
   if (modo === "auto") {
-    let [combo] = mejorCompra(saldo);
-    let nombres = combo.map(c => c[0]);
-
-    html += `<br><span style="color:#2bff6a">
-      💡 Mejor opción: ${nombres.join(", ")}
-    </span>`;
+    let combo = mejorCompra();
+    html += `<br>💡 Mejor opción: ${combo.join(", ")}`;
   }
 
   document.getElementById("productos").innerHTML = html;
@@ -121,83 +118,41 @@ function abrirTienda() {
 
 // ===================== COMPRA =====================
 function comprar() {
+  let input = document.getElementById("input").value.split(" ");
   let keys = Object.keys(PRODUCTOS);
-  let input = document.getElementById("input").value.trim();
 
-  if (!input) return;
-
-  let seleccion = [];
-
-  try {
-    seleccion = input.split(" ").map(i => {
-      let idx = parseInt(i) - 1;
-      if (idx < 0 || idx >= keys.length) throw "error";
-      return keys[idx];
-    });
-  } catch {
-    return;
-  }
+  let seleccion = input.map(i => keys[parseInt(i) - 1]);
 
   let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
 
-  if (total > saldo) {
-    document.getElementById("hud").innerHTML =
-      `<span style="color:#ff4fd8">❌ Excede saldo</span>`;
-    return;
-  }
+  if (total > saldo) return alert("❌ No tienes saldo");
 
-  aciertoTemp = evaluarCompra(saldo, seleccion);
+  aciertoTemp = evaluarCompra(seleccion);
 
   document.getElementById("shop").classList.add("hidden");
 
-  // 👉 SOLO CAMBIO DE FASE (NO MOVIMIENTO)
   fase = "return";
   pos = TIENDA;
 }
 
 // ===================== ALGORITMO =====================
-function mejorCompra(saldo) {
-  const productos = Object.entries(PRODUCTOS);
+function mejorCompra() {
+  let keys = Object.entries(PRODUCTOS);
+  let best = [];
 
-  let mejorDiff = Infinity;
-  let mejorCombo = [];
-
-  function buscar(start, combo) {
-    let total = combo.reduce((acc, p) => acc + p[1], 0);
-
-    if (total <= saldo) {
-      let diff = saldo - total;
-
-      if (diff < mejorDiff) {
-        mejorDiff = diff;
-        mejorCombo = [...combo];
-      }
-    } else return;
-
-    if (combo.length >= 5) return;
-
-    for (let i = start; i < productos.length; i++) {
-      buscar(i, [...combo, productos[i]]);
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i][1] <= saldo) {
+      best.push(keys[i][0]);
     }
   }
 
-  buscar(0, []);
-
-  return [mejorCombo, mejorDiff];
+  return best;
 }
 
 // ===================== EVALUAR =====================
-function evaluarCompra(saldo, seleccion) {
-  let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
-
-  if (total > saldo) return 0;
-
-  let [, mejorDiff] = mejorCompra(saldo);
-  let diffUser = saldo - total;
-
-  if (diffUser === 0) return 100;
-
-  return Math.round((mejorDiff / diffUser) * 10000) / 100;
+function evaluarCompra(sel) {
+  let total = sel.reduce((a, p) => a + PRODUCTOS[p], 0);
+  return Math.max(0, Math.round((saldo - total) * 10));
 }
 
 // ===================== FINAL =====================
@@ -208,23 +163,5 @@ function finalizar() {
 
   document.getElementById("end").classList.remove("hidden");
   document.getElementById("resultado").innerHTML =
-    `🏁 FIN<br>
-     Acierto: ${aciertoTemp}%<br>
-     Tiempo: ${tiempo}s`;
-
-  guardar(aciertoTemp, tiempo);
-}
-
-// ===================== GUARDAR =====================
-function guardar(acierto, tiempo) {
-  let data = JSON.parse(localStorage.getItem("partidas") || "[]");
-
-  data.push({
-    modo,
-    acierto,
-    tiempo,
-    fecha: new Date().toLocaleString()
-  });
-
-  localStorage.setItem("partidas", JSON.stringify(data));
+    `🏁 Acierto: ${aciertoTemp}%<br>Tiempo: ${tiempo}s`;
 }
