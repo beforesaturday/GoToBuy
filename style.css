@@ -1,20 +1,30 @@
-button {
-  padding: 10px;
-  margin: 5px;
-  cursor: pointer;
-  border: none;
-  background: #ff4fd8;
+body {
+  background: black;
   color: white;
-  border-radius: 6px;
+  font-family: monospace;
+  text-align: center;
+}
+
+pre {
+  font-size: 14px;
+  line-height: 14px;
+}
+
+button {
+  margin: 5px;
+  padding: 10px;
+  cursor: pointer;
 }
 
 .hidden {
   display: none;
 }
 
-body {
-  background: #0f0f0f;
-  color: white;
-  font-family: monospace;
-  text-align: center;
+#shop {
+  margin-top: 20px;
+}
+
+input {
+  padding: 5px;
+  width: 200px;
 }
