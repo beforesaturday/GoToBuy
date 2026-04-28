@@ -1,5 +1,3 @@
-console.log("JS cargado correctamente");
-
 const PRODUCTOS = {
     "Vino": 1.90,
     "Refresco": 2.20,
@@ -11,14 +9,17 @@ const PRODUCTOS = {
 let saldo = 0;
 let modo = "manual";
 
+/* ===== MOVIMIENTO ===== */
 let pos = 0;
 let tiendaPos = 20;
 let fase = "ida";
 
+/* ===================== SALDO ===================== */
 function generarSaldo() {
     return parseFloat((Math.random() * (8 - 1.5) + 1.5).toFixed(2));
 }
 
+/* ===================== MAPA ===================== */
 function draw() {
     let line = "";
 
@@ -32,6 +33,7 @@ function draw() {
     document.getElementById("map").innerText = line;
 }
 
+/* ===================== MOVIMIENTO TECLADO ===================== */
 document.addEventListener("keydown", (e) => {
     if (document.getElementById("game").classList.contains("hidden")) return;
 
@@ -41,7 +43,7 @@ document.addEventListener("keydown", (e) => {
 
         if (pos >= tiendaPos) {
             fase = "tienda";
-            document.getElementById("shop").style.display = "block";
+            alert("🛒 Has llegado a la tienda");
         }
     }
 
@@ -58,6 +60,7 @@ document.addEventListener("keydown", (e) => {
     draw();
 });
 
+/* ===================== MEJOR COMPRA ===================== */
 function mejorCompra(saldo) {
     let keys = Object.keys(PRODUCTOS);
     let best = [];
@@ -84,6 +87,7 @@ function mejorCompra(saldo) {
     return { combo: best, diff: bestDiff };
 }
 
+/* ===================== EVALUAR ===================== */
 function evaluarCompra(saldo, seleccion) {
     let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
     if (total > saldo) return 0;
@@ -96,6 +100,7 @@ function evaluarCompra(saldo, seleccion) {
     return ((mejor.diff / diffUser) * 100).toFixed(2);
 }
 
+/* ===================== INICIO ===================== */
 function startGame(m) {
     modo = m;
     saldo = generarSaldo();
@@ -110,7 +115,6 @@ function startGame(m) {
 
     let shop = document.getElementById("shop");
     shop.innerHTML = "";
-    shop.style.display = "none";
 
     Object.entries(PRODUCTOS).forEach(([k,v], i) => {
         let div = document.createElement("div");
@@ -128,6 +132,7 @@ function startGame(m) {
     draw();
 }
 
+/* ===================== COMPRAR ===================== */
 function submitBuy() {
     let input = document.getElementById("input").value.split(" ");
     let keys = Object.keys(PRODUCTOS);
@@ -163,16 +168,19 @@ function submitBuy() {
     }
 }
 
+/* ===================== FINAL ===================== */
 function terminarPartida() {
     document.getElementById("game").classList.add("hidden");
     document.getElementById("result").classList.remove("hidden");
 }
 
+/* ===================== HISTORIAL ===================== */
 function showHistory() {
     let data = JSON.parse(localStorage.getItem("partidas") || "[]");
     alert(JSON.stringify(data, null, 2));
 }
 
+/* ===================== RESET ===================== */
 function reset() {
     location.reload();
 }
