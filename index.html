@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GoToBuy Web Edition</title>
     <style>
         :root {
@@ -24,6 +24,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            touch-action: manipulation; /* Evita zoom accidental */
         }
 
         #game-container {
@@ -37,14 +38,15 @@
         }
 
         pre {
-            line-height: 1.2;
-            font-size: clamp(8px, 1.5vw, 12px);
+            line-height: 1.1;
+            font-size: clamp(10px, 2.5vw, 14px);
             margin: 20px 0;
             white-space: pre;
             background: #000;
             padding: 10px;
             border-radius: 5px;
             color: var(--white);
+            overflow-x: auto;
         }
 
         #ascii-title { color: var(--fuchsia); font-weight: bold; border: none; }
@@ -75,10 +77,38 @@
             margin: 20px 0;
         }
 
-        #info-bar { color: var(--emerald); font-size: 1.4rem; margin-bottom: 10px; }
+        #info-bar { color: var(--emerald); font-size: 1.2rem; margin-bottom: 10px; }
         #hint-box { color: var(--emerald); border: 1px dashed var(--emerald); padding: 10px; margin: 10px 0; }
-        
         .stat-item { border-bottom: 1px solid #333; padding: 5px; font-size: 0.9rem; }
+
+        /* Controles móviles */
+        #mobile-controls {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
+        .touch-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(0, 242, 255, 0.1);
+            border: 2px solid var(--turquoise);
+            color: var(--turquoise);
+            font-size: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .touch-btn:active {
+            background: var(--turquoise);
+            color: var(--bg);
+        }
     </style>
 </head>
 <body>
@@ -86,8 +116,8 @@
     <div id="game-container">
         <header>
             <pre id="ascii-title">
-  ____      _____      ____             
- / ___| ___|_   _|__  | __ ) _   _ _   _ 
+ ____     _____     ____              
+/ ___| ___|_   _|__  | __ ) _   _ _   _ 
 | |  _ / _ \ | |/ _ \ |  _ \| | | | | | |
 | |_| | (_) || | (_) || |_) | |_| | |_| |
  \____|\___/ |_|\___/ |____/ \__,_|\__, |
@@ -103,7 +133,12 @@
         <div id="game-screen" class="hidden">
             <pre id="canvas"></pre>
             <div id="info-bar"></div>
-            <p>Usa <b>FLECHAS ← →</b> para moverte</p>
+            
+            <div id="mobile-controls">
+                <div class="touch-btn" id="btn-left">←</div>
+                <div class="touch-btn" id="btn-right">→</div>
+            </div>
+            <p style="font-size: 0.8rem;">Usa flechas o botones táctiles</p>
         </div>
 
         <div id="shop-screen" class="hidden">
@@ -151,11 +186,8 @@
                 const width = 50;
                 let canvas = Array(10).fill().map(() => Array(width).fill(" "));
                 
-                // Dibujar Casa
                 CASA.forEach((r, y) => r.split("").forEach((c, x) => canvas[y+2][x] = c));
-                // Dibujar Tienda
                 TIENDA.forEach((r, y) => r.split("").forEach((c, x) => canvas[y+2][width - r.length + x] = c));
-                // Dibujar Jugador
                 PERSONA.forEach((r, y) => r.split("").forEach((c, x) => {
                     let px = this.state.pos + x;
                     if (px >= 0 && px < width) canvas[y+3][px] = c;
@@ -253,16 +285,42 @@
             showMenu() { this.switchScreen('menu'); this.state.fase = 'menu'; }
         };
 
-        // Escuchar teclado
-        window.onkeydown = (e) => {
+        // --- Lógica de movimiento unificada ---
+        const move = (dir) => {
             if (Game.state.fase === 'camino' || Game.state.fase === 'vuelta') {
-                if (e.key === "ArrowRight" && Game.state.pos < 42) Game.state.pos++;
-                if (e.key === "ArrowLeft" && Game.state.pos > 0) Game.state.pos--;
+                if (dir === 'left' && Game.state.pos > 0) Game.state.pos--;
+                if (dir === 'right' && Game.state.pos < 42) Game.state.pos++;
                 Game.draw();
-                
                 if (Game.state.fase === 'camino' && Game.state.pos >= 38) Game.enterShop();
                 if (Game.state.fase === 'vuelta' && Game.state.pos <= 5) Game.finish();
             }
+        };
+
+        // Soporte continuo (Mantener pulsado)
+        let moveInterval;
+        const startMoving = (dir) => {
+            move(dir);
+            moveInterval = setInterval(() => move(dir), 100);
+        };
+        const stopMoving = () => clearInterval(moveInterval);
+
+        // Listeners Táctiles
+        const bLeft = document.getElementById('btn-left');
+        bLeft.addEventListener('touchstart', (e) => { e.preventDefault(); startMoving('left'); });
+        bLeft.addEventListener('touchend', stopMoving);
+        bLeft.addEventListener('mousedown', () => startMoving('left'));
+        bLeft.addEventListener('mouseup', stopMoving);
+
+        const bRight = document.getElementById('btn-right');
+        bRight.addEventListener('touchstart', (e) => { e.preventDefault(); startMoving('right'); });
+        bRight.addEventListener('touchend', stopMoving);
+        bRight.addEventListener('mousedown', () => startMoving('right'));
+        bRight.addEventListener('mouseup', stopMoving);
+
+        // Teclado
+        window.onkeydown = (e) => {
+            if (e.key === "ArrowRight") move('right');
+            if (e.key === "ArrowLeft") move('left');
         };
     </script>
 </body>
