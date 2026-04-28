@@ -1,38 +1,47 @@
 body {
-  background: black;
-  color: white;
-  font-family: monospace;
-  text-align: center;
+    font-family: monospace;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+    margin: 0;
 }
 
 h1 {
-  color: #00ff99;
-  margin-top: 20px;
+    color: #ff00ff;
 }
 
-button {
-  margin: 6px;
-  padding: 10px 15px;
-  cursor: pointer;
-  border: none;
-  background: #222;
-  color: white;
-}
-
-button:hover {
-  background: #00ff99;
-  color: black;
+.container {
+    margin-top: 40px;
 }
 
 .hidden {
-  display: none;
+    display: none;
 }
 
+.btn {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 16px;
+    color: white;
+}
+
+.green { background: #22c55e; }
+.blue { background: #38bdf8; }
+.purple { background: #a855f7; }
+
 #shop {
-  margin-top: 20px;
+    margin-top: 20px;
+}
+
+.product {
+    margin: 5px;
 }
 
 input {
-  padding: 8px;
-  width: 200px;
+    padding: 8px;
+    margin-top: 10px;
+    width: 200px;
 }
