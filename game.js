@@ -1,186 +1,165 @@
-const PRODUCTOS = {
-    "Vino": 1.90,
-    "Refresco": 2.20,
-    "Cerveza": 2.45,
-    "Energetica": 1.80,
-    "Papas": 1.40
+const PRODUCTOS = { "Vino": 1.90, "Refresco": 2.20, "Cerveza": 2.45, "Energetica": 1.80, "Papas": 1.40 };
+let gameState = {
+    pos: 5,
+    saldo: 0,
+    modo: 'manual',
+    carrito: [],
+    startTime: 0,
+    fase: 'camino' // camino, tienda, vuelta
 };
 
-let saldo = 0;
-let modo = "manual";
+const CASA = [" ██████ ", " ██  ██ ", "██████████", "██ ██ ██", "██  ██  "];
+const TIENDA = [" ████████ ", "██ TIEN ██", "██  DA  ██", "██      ██", "██████████"];
+const PERSONA = ["  ██  ", " ████ ", "  ██  ", "  █ █ ", " ██ ██"];
 
-/* ===== MOVIMIENTO ===== */
-let pos = 0;
-let tiendaPos = 20;
-let fase = "ida";
+// --- Lógica de Juego ---
 
-/* ===================== SALDO ===================== */
 function generarSaldo() {
-    return parseFloat((Math.random() * (8 - 1.5) + 1.5).toFixed(2));
+    return (Math.random() * (8.0 - 1.5) + 1.5).toFixed(2);
 }
 
-/* ===================== MAPA ===================== */
-function draw() {
-    let line = "";
+function obtenerMejorCompra(saldo) {
+    let precios = Object.entries(PRODUCTOS);
+    let mejorDiff = Infinity;
+    let mejorCombo = [];
 
-    for (let i = 0; i <= tiendaPos; i++) {
-        if (i === 0) line += "🏠";
-        else if (i === tiendaPos) line += "🏪";
-        else if (i === pos) line += "🧍";
-        else line += "·";
-    }
-
-    document.getElementById("map").innerText = line;
-}
-
-/* ===================== MOVIMIENTO TECLADO ===================== */
-document.addEventListener("keydown", (e) => {
-    if (document.getElementById("game").classList.contains("hidden")) return;
-
-    if (fase === "ida") {
-        if (e.key === "ArrowRight") pos++;
-        if (e.key === "ArrowLeft" && pos > 0) pos--;
-
-        if (pos >= tiendaPos) {
-            fase = "tienda";
-            alert("🛒 Has llegado a la tienda");
-        }
-    }
-
-    else if (fase === "vuelta") {
-        if (e.key === "ArrowLeft") pos--;
-        if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
-
-        if (pos <= 0) {
-            fase = "fin";
-            terminarPartida();
-        }
-    }
-
-    draw();
-});
-
-/* ===================== MEJOR COMPRA ===================== */
-function mejorCompra(saldo) {
-    let keys = Object.keys(PRODUCTOS);
-    let best = [];
-    let bestDiff = Infinity;
-
-    function backtrack(combo, total) {
-        if (total <= saldo) {
-            let diff = saldo - total;
-            if (diff < bestDiff) {
-                bestDiff = diff;
-                best = [...combo];
+    function buscar(index, actualCombo, actualTotal) {
+        if (actualTotal <= saldo) {
+            let diff = saldo - actualTotal;
+            if (diff < mejorDiff) {
+                mejorDiff = diff;
+                mejorCombo = [...actualCombo];
             }
         }
-        if (combo.length >= 5) return;
+        if (actualCombo.length >= 5 || index >= precios.length) return;
 
-        for (let k of keys) {
-            combo.push(k);
-            backtrack(combo, total + PRODUCTOS[k]);
-            combo.pop();
+        for (let i = index; i < precios.length; i++) {
+            buscar(i, [...actualCombo, precios[i][0]], actualTotal + precios[i][1]);
         }
     }
-
-    backtrack([], 0);
-    return { combo: best, diff: bestDiff };
+    buscar(0, [], 0);
+    return { combo: mejorCombo, diff: mejorDiff };
 }
 
-/* ===================== EVALUAR ===================== */
-function evaluarCompra(saldo, seleccion) {
-    let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
-    if (total > saldo) return 0;
+// --- Renderizado ---
 
-    let mejor = mejorCompra(saldo);
-    let diffUser = saldo - total;
+function dibujar() {
+    const width = 50;
+    let canvas = Array(10).fill().map(() => Array(width).fill(" "));
 
-    if (diffUser === 0) return 100;
-
-    return ((mejor.diff / diffUser) * 100).toFixed(2);
-}
-
-/* ===================== INICIO ===================== */
-function startGame(m) {
-    modo = m;
-    saldo = generarSaldo();
-
-    pos = 0;
-    fase = "ida";
-
-    document.getElementById("menu").classList.add("hidden");
-    document.getElementById("game").classList.remove("hidden");
-
-    document.getElementById("saldo").innerText = "💰 Saldo: " + saldo + "€";
-
-    let shop = document.getElementById("shop");
-    shop.innerHTML = "";
-
-    Object.entries(PRODUCTOS).forEach(([k,v], i) => {
-        let div = document.createElement("div");
-        div.className = "product";
-        div.innerText = `${i+1}. ${k} - ${v}€`;
-        shop.appendChild(div);
+    // Dibujar Casa
+    CASA.forEach((row, y) => {
+        row.split("").forEach((char, x) => { canvas[y+2][x] = char; });
     });
 
-    if (modo === "auto") {
-        let mejor = mejorCompra(saldo);
-        document.getElementById("hint").innerText =
-            "💡 Mejor: " + mejor.combo.join(", ");
-    }
+    // Dibujar Tienda
+    TIENDA.forEach((row, y) => {
+        row.split("").forEach((char, x) => { canvas[y+2][width - row.length + x] = char; });
+    });
 
-    draw();
-}
-
-/* ===================== COMPRAR ===================== */
-function submitBuy() {
-    let input = document.getElementById("input").value.split(" ");
-    let keys = Object.keys(PRODUCTOS);
-
-    try {
-        let seleccion = input.map(i => keys[parseInt(i)-1]);
-        let total = seleccion.reduce((a,p)=>a+PRODUCTOS[p],0);
-
-        if (total > saldo) {
-            alert("❌ Excede saldo");
-            return;
-        }
-
-        let acierto = evaluarCompra(saldo, seleccion);
-
-        let data = JSON.parse(localStorage.getItem("partidas") || "[]");
-        data.push({
-            modo: modo,
-            acierto: acierto,
-            fecha: new Date().toLocaleString()
+    // Dibujar Persona
+    PERSONA.forEach((row, y) => {
+        row.split("").forEach((char, x) => {
+            if (gameState.pos + x < width) canvas[y+3][gameState.pos + x] = char;
         });
-        localStorage.setItem("partidas", JSON.stringify(data));
+    });
 
-        document.getElementById("resultado").innerText =
-            `Acierto: ${acierto}%`;
+    document.getElementById('canvas').innerText = canvas.map(r => r.join("")).join("\n");
+}
 
-        fase = "vuelta";
-        document.getElementById("shop").style.display = "none";
-        alert("🏠 Vuelve a casa");
+// --- Controladores ---
 
-    } catch {
-        alert("Entrada inválida");
+function startGame(modo) {
+    gameState = { pos: 5, saldo: parseFloat(generarSaldo()), modo, carrito: [], startTime: Date.now(), fase: 'camino' };
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('info-bar').innerText = `💰 Saldo: ${gameState.saldo}€`;
+    dibujar();
+}
+
+window.addEventListener('keydown', (e) => {
+    if (gameState.fase === 'camino' || gameState.fase === 'vuelta') {
+        if (e.key === "ArrowRight" && gameState.pos < 40) gameState.pos++;
+        if (e.key === "ArrowLeft" && gameState.pos > 0) gameState.pos--;
+        
+        dibujar();
+
+        if (gameState.fase === 'camino' && gameState.pos >= 38) abrirTienda();
+        if (gameState.fase === 'vuelta' && gameState.pos <= 5) finalizarPartida();
+    }
+});
+
+function abrirTienda() {
+    gameState.fase = 'tienda';
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.remove('hidden');
+    document.getElementById('shop-balance').innerText = `Saldo disponible: ${gameState.saldo}€`;
+    
+    const list = document.getElementById('product-list');
+    list.innerHTML = "";
+    Object.entries(PRODUCTOS).forEach(([nombre, precio]) => {
+        let btn = document.createElement('button');
+        btn.innerText = `${nombre} - ${precio.toFixed(2)}€`;
+        btn.onclick = () => {
+            gameState.carrito.push(nombre);
+            document.getElementById('current-cart').innerText = gameState.carrito.join(", ");
+        };
+        list.appendChild(btn);
+    });
+
+    if (gameState.modo === 'auto') {
+        const mejor = obtenerMejorCompra(gameState.saldo);
+        const hint = document.getElementById('hint');
+        hint.innerText = `💡 Tip: La mejor compra es ${mejor.combo.join(", ")}`;
+        hint.classList.remove('hidden');
     }
 }
 
-/* ===================== FINAL ===================== */
-function terminarPartida() {
-    document.getElementById("game").classList.add("hidden");
-    document.getElementById("result").classList.remove("hidden");
+function checkout() {
+    let total = gameState.carrito.reduce((acc, prod) => acc + PRODUCTOS[prod], 0);
+    if (total > gameState.saldo) {
+        alert("¡Te has pasado del presupuesto!");
+        gameState.carrito = [];
+        document.getElementById('current-cart').innerText = "";
+        return;
+    }
+    
+    const mejor = obtenerMejorCompra(gameState.saldo);
+    let diffUsuario = gameState.saldo - total;
+    gameState.acierto = diffUsuario === 0 ? 100 : Math.min(100, Math.round((mejor.diff / diffUsuario) * 100));
+    
+    gameState.fase = 'vuelta';
+    document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
 }
 
-/* ===================== HISTORIAL ===================== */
-function showHistory() {
-    let data = JSON.parse(localStorage.getItem("partidas") || "[]");
-    alert(JSON.stringify(data, null, 2));
+function finalizarPartida() {
+    const tiempo = ((Date.now() - gameState.startTime) / 1000).toFixed(2);
+    const partida = {
+        modo: gameState.modo,
+        acierto: gameState.acierto,
+        tiempo: tiempo,
+        fecha: new Date().toLocaleString()
+    };
+
+    let historial = JSON.parse(localStorage.getItem('partidas') || "[]");
+    historial.push(partida);
+    localStorage.setItem('partidas', JSON.stringify(historial));
+
+    alert(`🏁 FIN\nAcierto: ${gameState.acierto}%\nTiempo: ${tiempo}s`);
+    showMenu();
 }
 
-/* ===================== RESET ===================== */
-function reset() {
-    location.reload();
+function showMenu() {
+    document.querySelectorAll('#game-container > div').forEach(div => div.classList.add('hidden'));
+    document.getElementById('menu').classList.remove('hidden');
+}
+
+function showStats() {
+    document.getElementById('menu').classList.add('hidden');
+    const screen = document.getElementById('stats-screen');
+    screen.classList.remove('hidden');
+    const log = document.getElementById('stats-log');
+    let historial = JSON.parse(localStorage.getItem('partidas') || "[]");
+    log.innerHTML = historial.map(p => `<p>${p.fecha} - ${p.modo}: ${p.acierto}% en ${p.tiempo}s</p>`).join("");
 }
