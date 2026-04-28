@@ -1,40 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>GoToBuy</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoToBuy Web</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="game-container">
+        <header>
+            <pre id="ascii-title">
+  ____      _____      ____             
+ / ___| ___|_   _|__  | __ ) _   _ _   _ 
+| |  _ / _ \ | |/ _ \ |  _ \| | | | | | |
+| |_| | (_) || | (_) || |_) | |_| | |_| |
+ \____|\___/ |_|\___/ |____/ \__,_|\__, |
+                                   |___/ </pre>
+        </header>
 
-<h1>🛒 GoToBuy</h1>
+        <div id="menu">
+            <button onclick="startGame('auto')">1. Jugar Automático (Con Ayuda)</button>
+            <button onclick="startGame('manual')">2. Jugar Manual</button>
+            <button onclick="showStats()">3. Partidas Anteriores</button>
+        </div>
 
-<div class="container" id="menu">
-    <button class="btn green" onclick="startGame('auto')">Automático</button>
-    <button class="btn blue" onclick="startGame('manual')">Manual</button>
-    <button class="btn purple" onclick="showHistory()">Historial</button>
-</div>
+        <div id="game-screen" class="hidden">
+            <pre id="canvas"></pre>
+            <div id="info-bar"></div>
+            <div id="controls">
+                <p>Usa las <b>flechas (← →)</b> para moverte</p>
+            </div>
+        </div>
 
-<div id="game" class="hidden">
-    <h2 id="saldo"></h2>
+        <div id="shop-screen" class="hidden">
+            <h2 style="color: var(--purple);">🏪 TIENDA</h2>
+            <p id="shop-balance"></p>
+            <div id="product-list"></div>
+            <div id="hint" class="hidden"></div>
+            <div id="cart-container">
+                <p>Tu selección: <span id="current-cart"></span></p>
+                <button onclick="checkout()">Finalizar Compra</button>
+            </div>
+        </div>
 
-    <div id="map"></div>
-    <p>Usa ← → para moverte</p>
-
-    <div id="shop"></div>
-
-    <input type="text" id="input" placeholder="Ej: 1 2 3">
-    <br>
-    <button class="btn green" onclick="submitBuy()">Comprar</button>
-
-    <p id="hint"></p>
-</div>
-
-<div id="result" class="hidden">
-    <h2 id="resultado"></h2>
-    <button class="btn blue" onclick="reset()">Volver</button>
-</div>
-
-<script src="script.js"></script>
+        <div id="stats-screen" class="hidden">
+            <h2>Historial de Partidas</h2>
+            <div id="stats-log"></div>
+            <button onclick="showMenu()">Volver</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
