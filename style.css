@@ -32,13 +32,6 @@ h1 {
 .blue { background: #38bdf8; }
 .purple { background: #a855f7; }
 
-#map {
-    margin: 20px auto;
-    width: 600px;
-    font-size: 24px;
-    letter-spacing: 5px;
-}
-
 #shop {
     margin-top: 20px;
 }
@@ -51,4 +44,11 @@ input {
     padding: 8px;
     margin-top: 10px;
     width: 200px;
+}
+
+#map {
+    margin: 20px auto;
+    width: 600px;
+    font-size: 24px;
+    letter-spacing: 5px;
 }
