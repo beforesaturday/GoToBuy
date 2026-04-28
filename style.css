@@ -15,49 +15,31 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
-    overflow: hidden;
 }
 
-#game-container {
-    text-align: center;
-    width: 90%;
-    max-width: 800px;
-}
-
-pre {
-    line-height: 1.2;
-    font-size: 14px;
-    margin: 20px 0;
-}
-
-#ascii-title { color: var(--fuchsia); font-weight: bold; }
+#game-container { text-align: center; width: 95%; max-width: 700px; border: 2px solid #333; padding: 20px; border-radius: 10px; }
+pre { line-height: 1.2; font-size: 12px; margin: 20px 0; overflow-x: auto; }
+#ascii-title { color: var(--fuchsia); }
 .hidden { display: none !important; }
 
 button {
     background: transparent;
     border: 1px solid var(--turquoise);
     color: var(--turquoise);
-    padding: 10px 20px;
+    padding: 12px 24px;
     margin: 10px;
     cursor: pointer;
     font-family: inherit;
-    transition: 0.3s;
+    font-size: 1rem;
+    transition: all 0.2s;
 }
 
-button:hover {
-    background: var(--turquoise);
-    color: var(--bg);
-}
+button:hover { background: var(--turquoise); color: var(--bg); font-weight: bold; }
 
-#product-list button {
-    display: block;
-    width: 80%;
-    margin: 5px auto;
-    border-color: var(--sky);
-    color: var(--sky);
-}
+#product-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+#product-list button { margin: 0; font-size: 0.9rem; border-color: var(--sky); color: var(--sky); }
 
-#info-bar { color: var(--turquoise); font-size: 1.2rem; margin: 10px; }
-#hint { color: var(--emerald); font-style: italic; margin: 10px; }
+#info-bar { color: var(--emerald); font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; }
+#hint-box { color: var(--emerald); border: 1px dashed var(--emerald); padding: 10px; margin: 10px 0; }
