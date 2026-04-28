@@ -2,52 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>GoToBuy Web</title>
-<style>
-body {
-    font-family: monospace;
-    background: #0f172a;
-    color: white;
-    text-align: center;
-    margin: 0;
-}
-
-h1 {
-    color: #ff00ff;
-}
-
-.container {
-    margin-top: 40px;
-}
-
-.btn {
-    padding: 10px 20px;
-    margin: 5px;
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
-    font-size: 16px;
-}
-
-.green { background: #22c55e; }
-.blue { background: #38bdf8; }
-.purple { background: #a855f7; }
-.red { background: #f43f5e; }
-
-.shop {
-    margin-top: 20px;
-}
-
-.product {
-    margin: 5px;
-}
-
-input {
-    padding: 8px;
-    margin-top: 10px;
-    width: 200px;
-}
-</style>
+<title>GoToBuy</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -59,9 +15,13 @@ input {
     <button class="btn purple" onclick="showHistory()">Historial</button>
 </div>
 
-<div id="game" style="display:none;">
+<div id="game" class="hidden">
     <h2 id="saldo"></h2>
-    <div class="shop" id="shop"></div>
+
+    <div id="map"></div>
+    <p>Usa ← → para moverte</p>
+
+    <div id="shop" style="display:none;"></div>
 
     <input type="text" id="input" placeholder="Ej: 1 2 3">
     <br>
@@ -70,131 +30,11 @@ input {
     <p id="hint"></p>
 </div>
 
-<div id="result" style="display:none;">
+<div id="result" class="hidden">
     <h2 id="resultado"></h2>
     <button class="btn blue" onclick="reset()">Volver</button>
 </div>
 
-<script>
-const PRODUCTOS = {
-    "Vino": 1.90,
-    "Refresco": 2.20,
-    "Cerveza": 2.45,
-    "Energetica": 1.80,
-    "Papas": 1.40
-};
-
-let saldo = 0;
-let modo = "manual";
-
-function generarSaldo() {
-    return (Math.random() * (8 - 1.5) + 1.5).toFixed(2);
-}
-
-function mejorCompra(saldo) {
-    let keys = Object.keys(PRODUCTOS);
-    let best = [];
-    let bestDiff = Infinity;
-
-    function backtrack(combo, total) {
-        if (total <= saldo) {
-            let diff = saldo - total;
-            if (diff < bestDiff) {
-                bestDiff = diff;
-                best = [...combo];
-            }
-        }
-        if (combo.length >= 5) return;
-
-        for (let k of keys) {
-            combo.push(k);
-            backtrack(combo, total + PRODUCTOS[k]);
-            combo.pop();
-        }
-    }
-
-    backtrack([], 0);
-    return { combo: best, diff: bestDiff };
-}
-
-function evaluarCompra(saldo, seleccion) {
-    let total = seleccion.reduce((a, p) => a + PRODUCTOS[p], 0);
-    if (total > saldo) return 0;
-
-    let mejor = mejorCompra(saldo);
-    let diffUser = saldo - total;
-
-    if (diffUser === 0) return 100;
-
-    return ((mejor.diff / diffUser) * 100).toFixed(2);
-}
-
-function startGame(m) {
-    modo = m;
-    saldo = parseFloat(generarSaldo());
-
-    document.getElementById("menu").style.display = "none";
-    document.getElementById("game").style.display = "block";
-
-    document.getElementById("saldo").innerText = "💰 Saldo: " + saldo + "€";
-
-    let shop = document.getElementById("shop");
-    shop.innerHTML = "";
-
-    Object.entries(PRODUCTOS).forEach(([k,v], i) => {
-        let div = document.createElement("div");
-        div.className = "product";
-        div.innerText = `${i+1}. ${k} - ${v}€`;
-        shop.appendChild(div);
-    });
-
-    if (modo === "auto") {
-        let mejor = mejorCompra(saldo);
-        document.getElementById("hint").innerText = "💡 Mejor: " + mejor.combo.join(", ");
-    }
-}
-
-function submitBuy() {
-    let input = document.getElementById("input").value.split(" ");
-    let keys = Object.keys(PRODUCTOS);
-
-    try {
-        let seleccion = input.map(i => keys[parseInt(i)-1]);
-        let total = seleccion.reduce((a,p)=>a+PRODUCTOS[p],0);
-
-        if (total > saldo) {
-            alert("❌ Excede saldo");
-            return;
-        }
-
-        let acierto = evaluarCompra(saldo, seleccion);
-
-        let data = JSON.parse(localStorage.getItem("partidas") || "[]");
-        data.push({
-            modo: modo,
-            acierto: acierto,
-            fecha: new Date().toLocaleString()
-        });
-        localStorage.setItem("partidas", JSON.stringify(data));
-
-        document.getElementById("game").style.display = "none";
-        document.getElementById("result").style.display = "block";
-        document.getElementById("resultado").innerText = `Acierto: ${acierto}%`;
-
-    } catch {
-        alert("Entrada inválida");
-    }
-}
-
-function showHistory() {
-    let data = JSON.parse(localStorage.getItem("partidas") || "[]");
-    alert(JSON.stringify(data, null, 2));
-}
-
-function reset() {
-    location.reload();
-}
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
