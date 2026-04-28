@@ -9,9 +9,52 @@ const PRODUCTOS = {
 let saldo = 0;
 let modo = "manual";
 
+let pos = 0;
+let tiendaPos = 20;
+let fase = "ida"; // ida → tienda → vuelta → fin
+
 function generarSaldo() {
     return parseFloat((Math.random() * (8 - 1.5) + 1.5).toFixed(2));
 }
+
+function draw() {
+    let line = "";
+
+    for (let i = 0; i <= tiendaPos; i++) {
+        if (i === 0) line += "🏠";
+        else if (i === tiendaPos) line += "🏪";
+        else if (i === pos) line += "🧍";
+        else line += "·";
+    }
+
+    document.getElementById("map").innerText = line;
+}
+
+document.addEventListener("keydown", (e) => {
+    if (document.getElementById("game").classList.contains("hidden")) return;
+
+    if (fase === "ida") {
+        if (e.key === "ArrowRight") pos++;
+        if (e.key === "ArrowLeft" && pos > 0) pos--;
+
+        if (pos >= tiendaPos) {
+            fase = "tienda";
+            document.getElementById("shop").style.display = "block";
+        }
+    }
+
+    else if (fase === "vuelta") {
+        if (e.key === "ArrowLeft") pos--;
+        if (e.key === "ArrowRight" && pos < tiendaPos) pos++;
+
+        if (pos <= 0) {
+            fase = "fin";
+            terminarPartida();
+        }
+    }
+
+    draw();
+});
 
 function mejorCompra(saldo) {
     let keys = Object.keys(PRODUCTOS);
@@ -55,6 +98,9 @@ function startGame(m) {
     modo = m;
     saldo = generarSaldo();
 
+    pos = 0;
+    fase = "ida";
+
     document.getElementById("menu").classList.add("hidden");
     document.getElementById("game").classList.remove("hidden");
 
@@ -62,6 +108,7 @@ function startGame(m) {
 
     let shop = document.getElementById("shop");
     shop.innerHTML = "";
+    shop.style.display = "none";
 
     Object.entries(PRODUCTOS).forEach(([k,v], i) => {
         let div = document.createElement("div");
@@ -75,6 +122,8 @@ function startGame(m) {
         document.getElementById("hint").innerText =
             "💡 Mejor: " + mejor.combo.join(", ");
     }
+
+    draw();
 }
 
 function submitBuy() {
@@ -100,14 +149,21 @@ function submitBuy() {
         });
         localStorage.setItem("partidas", JSON.stringify(data));
 
-        document.getElementById("game").classList.add("hidden");
-        document.getElementById("result").classList.remove("hidden");
         document.getElementById("resultado").innerText =
             `Acierto: ${acierto}%`;
+
+        fase = "vuelta";
+        document.getElementById("shop").style.display = "none";
+        alert("🏠 Vuelve a casa");
 
     } catch {
         alert("Entrada inválida");
     }
+}
+
+function terminarPartida() {
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
 }
 
 function showHistory() {
