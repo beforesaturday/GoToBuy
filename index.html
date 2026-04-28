@@ -3,10 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoToBuy Web</title>
-    <link rel="stylesheet" href="style.css">
+    <title>GoToBuy Web Edition</title>
+    <style>
+        :root {
+            --bg: #0e0e0e;
+            --emerald: #00ff42;
+            --turquoise: #00f2ff;
+            --fuchsia: #ff00ff;
+            --purple: #bc13fe;
+            --sky: #87ceeb;
+            --white: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--white);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #game-container {
+            text-align: center;
+            width: 95%;
+            max-width: 700px;
+            border: 2px solid #333;
+            padding: 20px;
+            border-radius: 10px;
+            background: #111;
+        }
+
+        pre {
+            line-height: 1.2;
+            font-size: clamp(8px, 1.5vw, 12px);
+            margin: 20px 0;
+            white-space: pre;
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            color: var(--white);
+        }
+
+        #ascii-title { color: var(--fuchsia); font-weight: bold; border: none; }
+        .hidden { display: none !important; }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--turquoise);
+            color: var(--turquoise);
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--turquoise);
+            color: var(--bg);
+            box-shadow: 0 0 10px var(--turquoise);
+        }
+
+        #product-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        #info-bar { color: var(--emerald); font-size: 1.4rem; margin-bottom: 10px; }
+        #hint-box { color: var(--emerald); border: 1px dashed var(--emerald); padding: 10px; margin: 10px 0; }
+        
+        .stat-item { border-bottom: 1px solid #333; padding: 5px; font-size: 0.9rem; }
+    </style>
 </head>
 <body>
+
     <div id="game-container">
         <header>
             <pre id="ascii-title">
@@ -19,15 +95,15 @@
         </header>
 
         <div id="menu">
-            <button id="btn-auto">1. Jugar Automático (Con Ayuda)</button>
-            <button id="btn-manual">2. Jugar Manual</button>
-            <button id="btn-stats">3. Partidas Anteriores</button>
+            <button onclick="Game.start('auto')">1. Jugar Automático</button>
+            <button onclick="Game.start('manual')">2. Jugar Manual</button>
+            <button onclick="Game.showStats()">3. Historial</button>
         </div>
 
         <div id="game-screen" class="hidden">
             <pre id="canvas"></pre>
             <div id="info-bar"></div>
-            <div id="controls-hint">Usa las <b>Flechas ← →</b> para moverte</div>
+            <p>Usa <b>FLECHAS ← →</b> para moverte</p>
         </div>
 
         <div id="shop-screen" class="hidden">
@@ -35,18 +111,159 @@
             <p id="shop-balance"></p>
             <div id="product-list"></div>
             <div id="hint-box" class="hidden"></div>
-            <div id="cart-info">
-                <p>Tu selección: <span id="current-cart">Ninguna</span></p>
-                <button id="btn-checkout">Finalizar Compra</button>
+            <div>
+                <p>Carrito: <span id="current-cart" style="color: var(--sky);">Vacio</span></p>
+                <button onclick="Game.checkout()">Finalizar Compra</button>
             </div>
         </div>
 
         <div id="stats-screen" class="hidden">
-            <h2>Historial de Partidas</h2>
+            <h2>Partidas Anteriores</h2>
             <div id="stats-log"></div>
-            <button class="btn-back">Volver al Menú</button>
+            <button onclick="Game.showMenu()">Volver</button>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        const PRODUCTOS = { "Vino": 1.90, "Refresco": 2.20, "Cerveza": 2.45, "Energetica": 1.80, "Papas": 1.40 };
+        const CASA = [" ██████ ", " ██  ██ ", "██████████", "██ ██ ██", "██  ██  "];
+        const TIENDA = [" ████████ ", "██ TIEN ██", "██  DA  ██", "██      ██", "██████████"];
+        const PERSONA = ["  ██  ", " ████ ", "  ██  ", "  █ █ ", " ██ ██"];
+
+        const Game = {
+            state: { pos: 5, saldo: 0, modo: '', carrito: [], startTime: 0, fase: 'menu', acierto: 0 },
+
+            start(modo) {
+                this.state = {
+                    pos: 5,
+                    saldo: parseFloat((Math.random() * 6.5 + 1.5).toFixed(2)),
+                    modo: modo,
+                    carrito: [],
+                    startTime: Date.now(),
+                    fase: 'camino'
+                };
+                document.getElementById('info-bar').innerText = `💰 SALDO: ${this.state.saldo.toFixed(2)}€`;
+                this.switchScreen('game-screen');
+                this.draw();
+            },
+
+            draw() {
+                const width = 50;
+                let canvas = Array(10).fill().map(() => Array(width).fill(" "));
+                
+                // Dibujar Casa
+                CASA.forEach((r, y) => r.split("").forEach((c, x) => canvas[y+2][x] = c));
+                // Dibujar Tienda
+                TIENDA.forEach((r, y) => r.split("").forEach((c, x) => canvas[y+2][width - r.length + x] = c));
+                // Dibujar Jugador
+                PERSONA.forEach((r, y) => r.split("").forEach((c, x) => {
+                    let px = this.state.pos + x;
+                    if (px >= 0 && px < width) canvas[y+3][px] = c;
+                }));
+
+                document.getElementById('canvas').innerText = canvas.map(r => r.join("")).join("\n");
+            },
+
+            switchScreen(id) {
+                ['menu', 'game-screen', 'shop-screen', 'stats-screen'].forEach(s => 
+                    document.getElementById(s).classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+            },
+
+            enterShop() {
+                this.state.fase = 'tienda';
+                this.switchScreen('shop-screen');
+                document.getElementById('shop-balance').innerText = `Tienes: ${this.state.saldo.toFixed(2)}€`;
+                document.getElementById('current-cart').innerText = "Vacío";
+                
+                const list = document.getElementById('product-list');
+                list.innerHTML = "";
+                Object.entries(PRODUCTOS).forEach(([nombre, precio]) => {
+                    let b = document.createElement('button');
+                    b.innerText = `${nombre} (${precio.toFixed(2)}€)`;
+                    b.onclick = () => {
+                        this.state.carrito.push(nombre);
+                        document.getElementById('current-cart').innerText = this.state.carrito.join(", ");
+                    };
+                    list.appendChild(b);
+                });
+
+                const hint = document.getElementById('hint-box');
+                if (this.state.modo === 'auto') {
+                    const best = this.calculateBest(this.state.saldo);
+                    hint.innerText = `💡 AYUDA: Compra ${best.combo.join(", ")}`;
+                    hint.classList.remove('hidden');
+                } else {
+                    hint.classList.add('hidden');
+                }
+            },
+
+            calculateBest(saldo) {
+                let items = Object.entries(PRODUCTOS);
+                let bestDiff = Infinity;
+                let bestCombo = [];
+
+                const solve = (idx, combo, total) => {
+                    if (total <= saldo) {
+                        let diff = saldo - total;
+                        if (diff < bestDiff) { bestDiff = diff; bestCombo = [...combo]; }
+                    }
+                    if (combo.length >= 5 || idx >= items.length) return;
+                    for (let i = idx; i < items.length; i++) {
+                        solve(i, [...combo, items[i][0]], total + items[i][1]);
+                    }
+                };
+                solve(0, [], 0);
+                return { combo: bestCombo, diff: bestDiff };
+            },
+
+            checkout() {
+                let total = this.state.carrito.reduce((acc, name) => acc + PRODUCTOS[name], 0);
+                if (total > this.state.saldo) return alert("¡No tienes suficiente dinero!");
+                
+                const best = this.calculateBest(this.state.saldo);
+                let userDiff = this.state.saldo - total;
+                this.state.acierto = userDiff === 0 ? 100 : Math.max(0, Math.round((best.diff / userDiff) * 100));
+                
+                this.state.fase = 'vuelta';
+                this.switchScreen('game-screen');
+                this.draw();
+            },
+
+            finish() {
+                const tiempo = ((Date.now() - this.state.startTime) / 1000).toFixed(1);
+                const data = { acierto: this.state.acierto, tiempo, fecha: new Date().toLocaleString() };
+                let history = JSON.parse(localStorage.getItem('gtb_history') || "[]");
+                history.push(data);
+                localStorage.setItem('gtb_history', JSON.stringify(history));
+                
+                alert(`¡Llegaste! Acierto: ${this.state.acierto}% | Tiempo: ${tiempo}s`);
+                this.showMenu();
+            },
+
+            showStats() {
+                this.switchScreen('stats-screen');
+                const log = document.getElementById('stats-log');
+                const history = JSON.parse(localStorage.getItem('gtb_history') || "[]");
+                log.innerHTML = history.length ? 
+                    history.reverse().map(p => `<div class="stat-item">${p.fecha} - Acc: ${p.acierto}% - ${p.tiempo}s</div>`).join("") : 
+                    "No hay partidas.";
+            },
+
+            showMenu() { this.switchScreen('menu'); this.state.fase = 'menu'; }
+        };
+
+        // Escuchar teclado
+        window.onkeydown = (e) => {
+            if (Game.state.fase === 'camino' || Game.state.fase === 'vuelta') {
+                if (e.key === "ArrowRight" && Game.state.pos < 42) Game.state.pos++;
+                if (e.key === "ArrowLeft" && Game.state.pos > 0) Game.state.pos--;
+                Game.draw();
+                
+                if (Game.state.fase === 'camino' && Game.state.pos >= 38) Game.enterShop();
+                if (Game.state.fase === 'vuelta' && Game.state.pos <= 5) Game.finish();
+            }
+        };
+    </script>
 </body>
 </html>
