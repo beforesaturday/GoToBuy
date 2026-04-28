@@ -1,3 +1,5 @@
+console.log("JS cargado correctamente");
+
 const PRODUCTOS = {
     "Vino": 1.90,
     "Refresco": 2.20,
@@ -11,7 +13,7 @@ let modo = "manual";
 
 let pos = 0;
 let tiendaPos = 20;
-let fase = "ida"; // ida → tienda → vuelta → fin
+let fase = "ida";
 
 function generarSaldo() {
     return parseFloat((Math.random() * (8 - 1.5) + 1.5).toFixed(2));
