@@ -19,34 +19,32 @@
         </header>
 
         <div id="menu">
-            <button onclick="startGame('auto')">1. Jugar Automático (Con Ayuda)</button>
-            <button onclick="startGame('manual')">2. Jugar Manual</button>
-            <button onclick="showStats()">3. Partidas Anteriores</button>
+            <button id="btn-auto">1. Jugar Automático (Con Ayuda)</button>
+            <button id="btn-manual">2. Jugar Manual</button>
+            <button id="btn-stats">3. Partidas Anteriores</button>
         </div>
 
         <div id="game-screen" class="hidden">
             <pre id="canvas"></pre>
             <div id="info-bar"></div>
-            <div id="controls">
-                <p>Usa las <b>flechas (← →)</b> para moverte</p>
-            </div>
+            <div id="controls-hint">Usa las <b>Flechas ← →</b> para moverte</div>
         </div>
 
         <div id="shop-screen" class="hidden">
             <h2 style="color: var(--purple);">🏪 TIENDA</h2>
             <p id="shop-balance"></p>
             <div id="product-list"></div>
-            <div id="hint" class="hidden"></div>
-            <div id="cart-container">
-                <p>Tu selección: <span id="current-cart"></span></p>
-                <button onclick="checkout()">Finalizar Compra</button>
+            <div id="hint-box" class="hidden"></div>
+            <div id="cart-info">
+                <p>Tu selección: <span id="current-cart">Ninguna</span></p>
+                <button id="btn-checkout">Finalizar Compra</button>
             </div>
         </div>
 
         <div id="stats-screen" class="hidden">
             <h2>Historial de Partidas</h2>
             <div id="stats-log"></div>
-            <button onclick="showMenu()">Volver</button>
+            <button class="btn-back">Volver al Menú</button>
         </div>
     </div>
     <script src="script.js"></script>
