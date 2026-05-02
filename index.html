@@ -13,6 +13,7 @@
             --purple: #bc13fe;
             --sky: #87ceeb;
             --white: #ffffff;
+            --red: #ff4444;
         }
 
         body {
@@ -24,7 +25,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            touch-action: manipulation; /* Evita zoom accidental */
+            touch-action: manipulation;
         }
 
         #game-container {
@@ -57,10 +58,10 @@
             border: 1px solid var(--turquoise);
             color: var(--turquoise);
             padding: 12px 24px;
-            margin: 10px;
+            margin: 5px;
             cursor: pointer;
             font-family: inherit;
-            font-size: 1rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
         }
 
@@ -68,6 +69,20 @@
             background: var(--turquoise);
             color: var(--bg);
             box-shadow: 0 0 10px var(--turquoise);
+        }
+
+        /* Estilo para los items del carrito que se pueden borrar */
+        .cart-item {
+            border: 1px solid var(--sky);
+            color: var(--sky);
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .cart-item:hover {
+            border-color: var(--red);
+            color: var(--red);
+            text-decoration: line-through;
         }
 
         #product-list {
@@ -81,11 +96,254 @@
         #hint-box { color: var(--emerald); border: 1px dashed var(--emerald); padding: 10px; margin: 10px 0; }
         .stat-item { border-bottom: 1px solid #333; padding: 5px; font-size: 0.9rem; }
 
-        /* Controles móviles */
         #mobile-controls {
             display: flex;
             justify-content: center;
             gap: 40px;
+            margin-top: 20px;
+        }
+
+        .touch-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 242, 255, 0.1);
+            border: 2px solid var(--turquoise);
+            color: var(--turquoise);
+            font-size: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <pre id="ascii-title">
+ ____      _____     ____              
+/ ___| ___|_   _|__  | __ ) _   _ _   _ 
+| |  _ / _ \ | |/ _ \ |  _ \| | | | | | |
+| |_| | (_) || | (_) || |_) | |_| | |_| |
+ \____|\___/ |_|\___/ |____/ \__,_|\__, |
+                                    |___/ </pre>
+        </header>
+
+        <div id="menu">
+            <button onclick="Game.start('auto')">1. Jugar Automático</button>
+            <button onclick="Game.start('manual')">2. Jugar Manual</button>
+            <button onclick="Game.showStats()">3. Historial</button>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <pre id="canvas"></pre>
+            <div id="info-bar"></div>
+            <div id="mobile-controls">
+                <div class="touch-btn" id="btn-left">←</div>
+                <div class="touch-btn" id="btn-right">→</div>
+            </div>
+            <p style="font-size: 0.8rem;">Usa flechas o botones táctiles</p>
+        </div>
+
+        <div id="shop-screen" class="hidden">
+            <h2 style="color: var(--purple);">🏪 TIENDA</h2>
+            <p id="shop-balance"></p>
+            <div id="product-list"></div>
+            <div id="hint-box" class="hidden"></div>
+            <hr style="border: 0.5px solid #333;">
+            <div>
+                <p>Tu Carrito (clic para quitar):</p>
+                <div id="cart-container" style="min-height: 40px; margin-bottom: 15px;"></div>
+                <button onclick="Game.checkout()" style="border-color: var(--emerald); color: var(--emerald);">Finalizar Compra</button>
+            </div>
+        </div>
+
+        <div id="stats-screen" class="hidden">
+            <h2>Partidas Anteriores</h2>
+            <div id="stats-log"></div>
+            <button onclick="Game.showMenu()">Volver</button>
+        </div>
+    </div>
+
+    <script>
+        const PRODUCTOS = { "Vino": 1.90, "Refresco": 2.20, "Cerveza": 2.45, "Energetica": 1.80, "Papas": 1.40 };
+        const CASA = [" ██████ ", " ██  ██ ", "██████████", "██ ██ ██", "██  ██  "];
+        const TIENDA = [" ████████ ", "██ TIEN ██", "██  DA  ██", "██      ██", "██████████"];
+        const PERSONA = ["  ██  ", " ████ ", "  ██  ", "  █ █ ", " ██ ██"];
+
+        const Game = {
+            state: { pos: 5, saldo: 0, modo: '', carrito: [], startTime: 0, fase: 'menu', acierto: 0 },
+
+            start(modo) {
+                this.state = {
+                    pos: 5,
+                    saldo: parseFloat((Math.random() * 6.5 + 1.5).toFixed(2)),
+                    modo: modo,
+                    carrito: [],
+                    startTime: Date.now(),
+                    fase: 'camino'
+                };
+                document.getElementById('info-bar').innerText = `💰 SALDO: ${this.state.saldo.toFixed(2)}€`;
+                this.switchScreen('game-screen');
+                this.draw();
+            },
+
+            draw() {
+                const width = 50;
+                let canvas = Array(10).fill().map(() => Array(width).fill(" "));
+                CASA.forEach((r, y) => r.split("").forEach((c, x) => canvas[y+2][x] = c));
+                TIENDA.forEach((r, y) => r.split("").forEach((c, x) => canvas[y+2][width - r.length + x] = c));
+                PERSONA.forEach((r, y) => r.split("").forEach((c, x) => {
+                    let px = this.state.pos + x;
+                    if (px >= 0 && px < width) canvas[y+3][px] = c;
+                }));
+                document.getElementById('canvas').innerText = canvas.map(r => r.join("")).join("\n");
+            },
+
+            switchScreen(id) {
+                ['menu', 'game-screen', 'shop-screen', 'stats-screen'].forEach(s => 
+                    document.getElementById(s).classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+            },
+
+            enterShop() {
+                this.state.fase = 'tienda';
+                this.switchScreen('shop-screen');
+                document.getElementById('shop-balance').innerText = `Tienes: ${this.state.saldo.toFixed(2)}€`;
+                this.updateCartUI();
+                
+                const list = document.getElementById('product-list');
+                list.innerHTML = "";
+                Object.entries(PRODUCTOS).forEach(([nombre, precio]) => {
+                    let b = document.createElement('button');
+                    b.innerText = `${nombre} (${precio.toFixed(2)}€)`;
+                    b.onclick = () => {
+                        this.state.carrito.push(nombre);
+                        this.updateCartUI();
+                    };
+                    list.appendChild(b);
+                });
+
+                const hint = document.getElementById('hint-box');
+                if (this.state.modo === 'auto') {
+                    const best = this.calculateBest(this.state.saldo);
+                    hint.innerText = `💡 AYUDA: Compra ${best.combo.join(", ")}`;
+                    hint.classList.remove('hidden');
+                } else {
+                    hint.classList.add('hidden');
+                }
+            },
+
+            // NUEVA FUNCIÓN: Actualiza el carrito visualmente
+            updateCartUI() {
+                const container = document.getElementById('cart-container');
+                container.innerHTML = "";
+                if (this.state.carrito.length === 0) {
+                    container.innerHTML = "<span style='color:#666'>Vacío</span>";
+                    return;
+                }
+
+                this.state.carrito.forEach((nombre, index) => {
+                    let btn = document.createElement('button');
+                    btn.className = "cart-item";
+                    btn.innerText = nombre;
+                    btn.onclick = () => {
+                        this.state.carrito.splice(index, 1); // Quita el elemento por su posición
+                        this.updateCartUI(); // Refresca la lista
+                    };
+                    container.appendChild(btn);
+                });
+            },
+
+            calculateBest(saldo) {
+                let items = Object.entries(PRODUCTOS);
+                let bestDiff = Infinity;
+                let bestCombo = [];
+                const solve = (idx, combo, total) => {
+                    if (total <= saldo) {
+                        let diff = saldo - total;
+                        if (diff < bestDiff) { bestDiff = diff; bestCombo = [...combo]; }
+                    }
+                    if (combo.length >= 5 || idx >= items.length) return;
+                    for (let i = idx; i < items.length; i++) {
+                        solve(i, [...combo, items[i][0]], total + items[i][1]);
+                    }
+                };
+                solve(0, [], 0);
+                return { combo: bestCombo, diff: bestDiff };
+            },
+
+            checkout() {
+                let total = this.state.carrito.reduce((acc, name) => acc + PRODUCTOS[name], 0);
+                if (total > this.state.saldo) return alert(`¡Te pasaste! Llevas ${total.toFixed(2)}€ y solo tienes ${this.state.saldo.toFixed(2)}€`);
+                
+                const best = this.calculateBest(this.state.saldo);
+                let userDiff = this.state.saldo - total;
+                this.state.acierto = userDiff === 0 ? 100 : Math.max(0, Math.round((best.diff / (userDiff || 0.01)) * 100));
+                
+                this.state.fase = 'vuelta';
+                this.switchScreen('game-screen');
+                this.draw();
+            },
+
+            finish() {
+                const tiempo = ((Date.now() - this.state.startTime) / 1000).toFixed(1);
+                const data = { acierto: this.state.acierto, tiempo, fecha: new Date().toLocaleString() };
+                let history = JSON.parse(localStorage.getItem('gtb_history') || "[]");
+                history.push(data);
+                localStorage.setItem('gtb_history', JSON.stringify(history));
+                alert(`¡Llegaste a casa!\nAcierto de compra: ${this.state.acierto}%\nTiempo total: ${tiempo}s`);
+                this.showMenu();
+            },
+
+            showStats() {
+                this.switchScreen('stats-screen');
+                const log = document.getElementById('stats-log');
+                const history = JSON.parse(localStorage.getItem('gtb_history') || "[]");
+                log.innerHTML = history.length ? 
+                    history.reverse().map(p => `<div class="stat-item">${p.fecha} - Acc: ${p.acierto}% - ${p.tiempo}s</div>`).join("") : 
+                    "No hay partidas.";
+            },
+
+            showMenu() { this.switchScreen('menu'); this.state.fase = 'menu'; }
+        };
+
+        const move = (dir) => {
+            if (Game.state.fase === 'camino' || Game.state.fase === 'vuelta') {
+                if (dir === 'left' && Game.state.pos > 0) Game.state.pos--;
+                if (dir === 'right' && Game.state.pos < 42) Game.state.pos++;
+                Game.draw();
+                if (Game.state.fase === 'camino' && Game.state.pos >= 38) Game.enterShop();
+                if (Game.state.fase === 'vuelta' && Game.state.pos <= 5) Game.finish();
+            }
+        };
+
+        let moveInterval;
+        const startMoving = (dir) => {
+            move(dir);
+            moveInterval = setInterval(() => move(dir), 80);
+        };
+        const stopMoving = () => clearInterval(moveInterval);
+
+        document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); startMoving('left'); });
+        document.getElementById('btn-left').addEventListener('touchend', stopMoving);
+        document.getElementById('btn-left').addEventListener('mousedown', () => startMoving('left'));
+        document.getElementById('btn-left').addEventListener('mouseup', stopMoving);
+
+        document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); startMoving('right'); });
+        document.getElementById('btn-right').addEventListener('touchend', stopMoving);
+        document.getElementById('btn-right').addEventListener('mousedown', () => startMoving('right'));
+        document.getElementById('btn-right').addEventListener('mouseup', stopMoving);
+
+        window.onkeydown = (e) => {
+            if (e.key === "ArrowRight") move('right');
+            if (e.key === "ArrowLeft") move('left');
+        };
+    </script>
+</body>
+</html>            gap: 40px;
             margin-top: 20px;
             padding: 10px;
         }
